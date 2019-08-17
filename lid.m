@@ -40,23 +40,13 @@
     defaultanswer={'test'};
     expt_name = char(inputdlg(prompt,name,numlines,defaultanswer));
       
-    switch questdlg('Is plate density 384 or higher?',...
+    density = str2num(questdlg('What density plates are you using?',...
         'Density Options',...
-        'Yes','No','Yes')
-        case 'Yes'
-            density = str2num(questdlg('What density plates are you using?',...
-                'Density Options',...
-                '384','1536','6144','6144'));
-            if density == 6144
-                dimensions = [64 96];
-            elseif density == 1536
-                dimensions = [32 48];
-            else
-                dimensions = [16 24];
-            end
-        case 'No'
-            density = 96;
-            dimensions = [8 12];
+        '1536','6144','6144'));
+    if density == 6144
+        dimensions = [64 96];
+    else
+        dimensions = [32 48];
     end
     
 %   MySQL Tablenames  
