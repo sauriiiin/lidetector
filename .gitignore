@@ -1,3 +1,5 @@
 
 *.m~
 *.csv
+csvtrial/.DS_Store
+.DS_Store

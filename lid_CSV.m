@@ -50,15 +50,12 @@
     tablename_res       = sprintf('%s_%d_RES',expt_name,density);
     
 %   MySQL Connection and fetch pos2coor data
-    p2c         = readtable('/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/4C3_pos2coor6144.csv',...
-        'Format','%d%d%d%d');
-    n_plates    = unique(p2c.x6144plate)';
-    p2o         = readtable('/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/4C3_pos2orf_name2.csv',...
-        'Format','%d%C');
-    sbox        = readtable('/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/4C3_smudgebox.csv',...
-        'Format','%d');
-    bpos        = readtable('/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/4C3_borderpos.csv',...
-        'Format','%d');
+    p2c         = readtable('/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/4C3_pos2coor6144.csv','Format','%f%f%f%f');
+    p2c.Properties.VariableNames = {'pos','plate','row','col'};
+    n_plates    = unique(p2c.plate)';
+    p2o         = readtable('/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/4C3_pos2orf_name2.csv','Format','%f%s');
+    sbox        = readtable('/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/4C3_smudgebox.csv','Format','%f');
+    bpos        = readtable('/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/4C3_borderpos.csv','Format','%f');
     
     jpeg_data   = importdata('/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/4C3_GA2_6144_JPEG.csv');
     jpeg_data   = array2table(jpeg_data.data);
@@ -102,90 +99,57 @@
 %   Linear Interpolation based CN
 
     IL = 1; % 1 = interleave
+    hours = unique(jpeg_data.hours);
 
-    hours = fetch(conn, sprintf(['select distinct hours from %s ',...
-        'order by hours asc'], tablename_jpeg));
-    hours = hours.hours;
-
-    data_fit = LinearInNorm(hours,n_plates,p2c_info,cont.name,...
-        tablename_p2o,tablename_jpeg,IL);
-
-    exec(conn, sprintf('drop table %s',tablename_norm));
-    exec(conn, sprintf(['create table %s ( ',...
-                'pos int(11) not NULL, ',...
-                'hours int(11) not NULL, ',...
-                'bg double default NULL, ',...
-                'average double default NULL, ',...
-                'fitness double default NULL ',...
-                ')'],tablename_norm));
+    norm_data = NORM_CSV(hours,n_plates,p2c,cont.name,p2o,jpeg_data,IL);
+    orf_data = [];
     for i=1:length(hours)
-        datainsert(conn, tablename_norm,...
-            {'pos','hours','bg','average','fitness'},data_fit{i});
+        temp = norm_data(norm_data.hours == hours(i),:);
+        [ai, bi] = ismember(temp.pos, p2o.pos);
+        orf_data = [orf_data; p2o.orf_name(bi)];
     end
-
-    exec(conn, sprintf('drop table %s',tablename_fit)); 
-    exec(conn, sprintf(['create table %s ',...
-        '(select b.orf_name, a.pos, a.hours, a.bg, a.average, a.fitness ',...
-        'from %s a, %s b ',...
-        'where a.pos = b.pos ',...
-        'order by a.pos asc)'],tablename_fit,tablename_norm,tablename_p2o));
-
+    fit_data = table(orf_data, norm_data.pos, norm_data.hours,...
+        norm_data.bg, norm_data.average, norm_data.fitness,...
+        'VariableNames',...
+        {'orf_name','pos','hours','bg','average','fitness'});
+    
+    writetable(norm_data,...
+        '/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/output/4C3_GA2_6144_NORM.csv');
+    writetable(fit_data,...
+        '/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/output/4C3_GA2_6144_FITNESS.csv');
+    
 %%  FITNESS STATS
 
-    clear data
+    stat_data = fitstats_CSV(fit_data, hours);
+    stat_data = stat_data(~isnan(stat_data.cs_mean),:);
 
-    exec(conn, sprintf('drop table %s', tablename_fits));
-    exec(conn, sprintf(['create table %s (orf_name varchar(255) null, ',...
-        'hours int not null, N int not null, cs_mean double null, ',...
-        'cs_median double null, cs_std double null)'],tablename_fits));
-
-    colnames_fits = {'orf_name','hours','N','cs_mean','cs_median','cs_std'};
-
-    stat_data = fitstats(tablename_fit,...
-        strtrim(sql_info(3,:)),...
-        strtrim(sql_info(1,:)),...
-        strtrim(sql_info(2,:)));
-    tic
-    datainsert(conn,tablename_fits,colnames_fits,stat_data)
-    sqlwrite(conn,tablename_fits,struct2table(stat_data));
-    toc
+    writetable(stat_data,...
+        '/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/output/4C3_GA2_6144_FITNESS_STATS.csv');
   
 %%  FITNESS STATS to EMPIRICAL P VALUES
-
-    exec(conn, sprintf('drop table %s',tablename_pval));
-    exec(conn, sprintf(['create table %s (orf_name varchar(255) null,'...
-        'hours int not null, p double null, stat double null)'],tablename_pval));
-    colnames_pval = {'orf_name','hours','p','stat'};
-
-    contpos = fetch(conn, sprintf(['select pos from %s ',...
-        'where orf_name = ''%s'' and pos < 10000 ',...
-        'and pos not in ',...
-        '(select pos from %s)'],...
-        tablename_p2o,cont.name,tablename_bpos));
-    contpos = contpos.pos + [110000,120000,130000,140000,...
+    
+    contpos = p2o.pos(strcmp(p2o.orf_name, {'"BF_control"'}) &...
+        p2o.pos < 10000 &...
+        ~ismember(p2o.pos, bpos.pos));
+    contpos = contpos + [110000,120000,130000,140000,...
         210000,220000,230000,240000];
-
+    
+    p_data = [];
     for iii = 1:length(hours)
         contfit = [];
         for ii = 1:length(contpos)
-            temp = fetch(conn, sprintf(['select fitness from %s ',...
-                'where hours = %d and pos in (%s) ',...
-                'and fitness is not null'],tablename_fit,hours(iii),...
-                sprintf('%d,%d,%d,%d,%d,%d,%d,%d',contpos(ii,:))));
+            temp = fit_data.fitness(fit_data.hours == hours(iii) & ismember(fit_data.pos,contpos(ii,:)));
 
-            if nansum(temp.fitness) > 0
-                outlier = isoutlier(temp.fitness);
-                temp.fitness(outlier) = NaN;
-                contfit = [contfit, nanmean(temp.fitness)];
+            if nansum(temp) > 0
+                outlier = isoutlier(temp);
+                temp(outlier) = NaN;
+                contfit = [contfit, nanmean(temp)];
             end
         end
         contmean = nanmean(contfit);
         contstd = nanstd(contfit);
 
-        orffit = fetch(conn, sprintf(['select orf_name, cs_median, ',...
-            'cs_mean, cs_std from %s ',...
-            'where hours = %d and orf_name != ''%s'' ',...
-            'order by orf_name asc'],tablename_fits,hours(iii),cont.name));
+        orffit = stat_data(stat_data.hours == hours(iii) & ~strcmpi(stat_data.orf_name,{sprintf('"%s"',cont.name)}),:);
 
         m = contfit';
         tt = length(m);
@@ -205,16 +169,18 @@
                 stat = [stat; (orffit.cs_mean(i) - contmean)/contstd];
             end
         end
-
-        pdata{iii}.orf_name = orffit.orf_name;
-        pdata{iii}.hours = ones(length(pdata{iii}.orf_name),1)*hours(iii);
-        pdata{iii}.p = num2cell(pvals);
-        pdata{iii}.p(cellfun(@isnan,pdata{iii}.p)) = {[]};
-        pdata{iii}.stat = num2cell(stat);
-        pdata{iii}.stat(cellfun(@isnan,pdata{iii}.stat)) = {[]};
-
-        sqlwrite(conn,tablename_pval,struct2table(pdata{iii}));
+        
+        pdata = table();
+        pdata.orf_name = orffit.orf_name;
+        pdata.hours = ones(length(pdata.orf_name),1)*hours(iii);
+        pdata.p = pvals;
+        pdata.stat = stat;
+        
+        p_data = [p_data; pdata];
     end
+    
+    writetable(p_data,...
+        '/Users/saur1n/Documents/MATLAB/lidetector/csvtrial/output/4C3_GA2_6144_PVALUE.csv');
         
 %%  END
     
