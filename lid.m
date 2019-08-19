@@ -138,7 +138,21 @@
         'replicate3 = NULL, average = NULL ',...
         'where pos in ',...
         '(select pos from %s)'],tablename_jpeg,tablename_sbox));
+
+%%  JPEG COMPETITION CORRECTION
     
+    jpeg_data = fetch(conn, sprintf(['select a.*, b.orf_name, c.%s, c.%s, c.%s '...
+        'from %s a, %s b, %s c '...
+        'where a.pos = b.pos and a.pos = c.pos '...
+        'order by a.hours, c.%s, c.%s, c.%s'],...
+        p2c_info(2,:), p2c_info(4,:), p2c_info(3,:),...
+        tablename_jpeg, tablename_p2o, p2c_info(1,:),...
+        p2c_info(2,:), p2c_info(3,:), p2c_info(4,:)));
+    
+    p2c.Properties.VariableNames = {'pos','plate','row','col'};
+    
+    
+
 %%  Upload JPEG to NORM data
 %   Linear Interpolation based CN
 
@@ -148,7 +162,7 @@
         'order by hours asc'], tablename_jpeg));
     hours = hours.hours;
 
-    data_fit = LinearInNorm(hours,n_plates,p2c_info,cont.name,...
+    fit_data = LinearInNorm(hours,n_plates,p2c_info,cont.name,...
         tablename_p2o,tablename_jpeg,IL);
 
     exec(conn, sprintf('drop table %s',tablename_norm));
@@ -161,7 +175,7 @@
                 ')'],tablename_norm));
     for i=1:length(hours)
         datainsert(conn, tablename_norm,...
-            {'pos','hours','bg','average','fitness'},data_fit{i});
+            {'pos','hours','bg','average','fitness'},fit_data{i});
     end
 
     exec(conn, sprintf('drop table %s',tablename_fit)); 
