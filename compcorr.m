@@ -7,6 +7,8 @@
 %   
 %   Competition correction based on neighbor colony growth
 
+%   p2c, jpeg_data, cont.name
+
 %%  NEIGHBOR POS
 
     pos = [];
@@ -47,92 +49,96 @@
     
 %%  COMPETITION SCORE
 
+    hours = sort(unique(jpeg_data.hours));
+
     jpeg_data.colony = zeros(size(jpeg_data,1),1);
     jpeg_data.colony(~strcmpi(jpeg_data.orf_name, {sprintf('%s',cont.name)})) =...
         ones(length(jpeg_data.colony(~strcmpi(jpeg_data.orf_name, {sprintf('%s',cont.name)}))),1);
     jpeg_data.colony(strcmpi(jpeg_data.orf_name, {''})) =...
         ones(length(jpeg_data.colony(strcmpi(jpeg_data.orf_name, {''}))),1).*-1;
     
+    jpeg_data.neigh = zeros(size(jpeg_data,1),1);
+    jpeg_data.neigh_sr = zeros(size(jpeg_data,1),1);
     
-    compdat <- data.frame()
+    compdat = [];
+    for hr = hours
+      for pl = sort(unique(jpeg_data.plate(jpeg_data.hours == hr)))
+        temp = jpeg_data(jpeg_data.hours == hr & jpeg_data.plate == pl,:);
+        temp.average(temp.colony == -1) = 0;
+        
+        for i = 1:size(grids,1)
+          temp.neigh(temp.pos == grids(i,1)) <- mean(temp$average[temp$pos %in% grids[i,2:9]], na.rm = T)
+              %%%%%%%%%%%%%% 
+          temp$neigh_sr[temp$pos == grids_sr[i]] <- mean(temp$average[temp$pos %in% grids_sr[i,2:9]], na.rm = T)
+        end
 
-    for (hr in sort(unique(alldat$hours))) {
-      for (pl in sort(unique(alldat$`6144plate`[alldat$hours == hr]))) {
-        tempdat <- alldat[alldat$hours == hr & alldat$`6144plate` == pl,]
-        tempdat$average[is.na(tempdat$orf_name)] <- 0
+        temp$neigh[is.na(temp$average) & !is.na(temp$orf_name)] <- NA
+        temp$neigh_sr[is.na(temp$average) & !is.na(temp$orf_name)] <- NA
+        temp$score <- temp$average/((temp$neigh + temp$neigh_sr)/2)
 
-        for (i in seq(1,dim(grids)[1])) {
-          tempdat$neigh[tempdat$pos == grids[i]] <- mean(tempdat$average[tempdat$pos %in% grids[i,2:9]], na.rm = T)
-          tempdat$neigh_sr[tempdat$pos == grids_sr[i]] <- mean(tempdat$average[tempdat$pos %in% grids_sr[i,2:9]], na.rm = T)
-        }
+        md <- mad(temp$score[temp$orf_name == 'BF_control'], na.rm =T)
+        ll <- median(temp$score[temp$orf_name == 'BF_control'], na.rm =T) - 3*md
+        ul <- median(temp$score[temp$orf_name == 'BF_control'], na.rm =T) + 3*md
 
-        tempdat$neigh[is.na(tempdat$average) & !is.na(tempdat$orf_name)] <- NA
-        tempdat$neigh_sr[is.na(tempdat$average) & !is.na(tempdat$orf_name)] <- NA
-        tempdat$score <- tempdat$average/((tempdat$neigh + tempdat$neigh_sr)/2)
+        temp$size <- NULL
+        temp$size[temp$score < ll & !is.na(temp$score)] <- 'Small'
+        temp$size[temp$score > ul & !is.na(temp$score)] <- 'Big'
+        temp$size[is.na(temp$size)] <- 'Normal'
 
-        md <- mad(tempdat$score[tempdat$orf_name == 'BF_control'], na.rm =T)
-        ll <- median(tempdat$score[tempdat$orf_name == 'BF_control'], na.rm =T) - 3*md
-        ul <- median(tempdat$score[tempdat$orf_name == 'BF_control'], na.rm =T) + 3*md
-
-        tempdat$size <- NULL
-        tempdat$size[tempdat$score < ll & !is.na(tempdat$score)] <- 'Small'
-        tempdat$size[tempdat$score > ul & !is.na(tempdat$score)] <- 'Big'
-        tempdat$size[is.na(tempdat$size)] <- 'Normal'
-
-        tempdat$sick <- NULL
-        tempdat$healthy_neigh <- NULL
-        for (p in tempdat$pos[tempdat$size == 'Small']) {
-          N <- sum(tempdat$size[tempdat$pos %in% grids[grids[,1] == p, 2:9] | tempdat$pos %in% grids_sr[grids_sr[,1] == p, 2:9]] == 'Big', na.rm = T)
+        temp$sick <- NULL
+        temp$healthy_neigh <- NULL
+        for (p in temp$pos[temp$size == 'Small']) {
+          N <- sum(temp$size[temp$pos %in% grids[grids[,1] == p, 2:9] | temp$pos %in% grids_sr[grids_sr[,1] == p, 2:9]] == 'Big', na.rm = T)
           if (N > 0) {
-            tempdat$sick[tempdat$pos == p] <- 'Y'
-            tempdat$healthy_neigh[tempdat$pos == p] <- N
+            temp$sick[temp$pos == p] <- 'Y'
+            temp$healthy_neigh[temp$pos == p] <- N
           }
         }
-        tempdat$sick[is.na(tempdat$sick) & tempdat$size == 'Small'] <- 'N'
-        tempdat$sick[is.na(tempdat$sick)] <- 'Normal'
+        temp$sick[is.na(temp$sick) & temp$size == 'Small'] <- 'N'
+        temp$sick[is.na(temp$sick)] <- 'Normal'
 
-        tempdat$healthy <- NULL
-        tempdat$sick_neigh <- NULL
-        for (p in tempdat$pos[tempdat$size == 'Big']) {
-          N <- sum(tempdat$size[tempdat$pos %in% grids[grids[,1] == p, 2:9] | tempdat$pos %in% grids_sr[grids_sr[,1] == p, 2:9]] == 'Small', na.rm = T)
+        temp$healthy <- NULL
+        temp$sick_neigh <- NULL
+        for (p in temp$pos[temp$size == 'Big']) {
+          N <- sum(temp$size[temp$pos %in% grids[grids[,1] == p, 2:9] | temp$pos %in% grids_sr[grids_sr[,1] == p, 2:9]] == 'Small', na.rm = T)
           if (N > 0) {
-            tempdat$healthy[tempdat$pos == p] <- 'Y'
-            tempdat$sick_neigh[tempdat$pos == p] <- N
+            temp$healthy[temp$pos == p] <- 'Y'
+            temp$sick_neigh[temp$pos == p] <- N
           }
         }
-        tempdat$healthy[is.na(tempdat$healthy) & tempdat$size == 'Big'] <- 'N'
-        tempdat$healthy[is.na(tempdat$healthy)] <- 'Normal'
+        temp$healthy[is.na(temp$healthy) & temp$size == 'Big'] <- 'N'
+        temp$healthy[is.na(temp$healthy)] <- 'Normal'
 
-        tempdat$comp <- NULL
-        for (p in tempdat$pos[tempdat$sick == 'Y' | tempdat$healthy == 'Y']){
-          if (tempdat$healthy[tempdat$pos == p] == 'Y') {
-            N <- sum(tempdat$healthy_neigh[tempdat$pos %in% grids[grids[,1] == p, 2:9] | tempdat$pos %in% grids_sr[grids_sr[,1] == p, 2:9]] + 1 > 
-                       tempdat$sick_neigh[tempdat$pos == p], na.rm = T)
+        temp$comp <- NULL
+        for (p in temp$pos[temp$sick == 'Y' | temp$healthy == 'Y']){
+          if (temp$healthy[temp$pos == p] == 'Y') {
+            N <- sum(temp$healthy_neigh[temp$pos %in% grids[grids[,1] == p, 2:9] | temp$pos %in% grids_sr[grids_sr[,1] == p, 2:9]] + 1 > 
+                       temp$sick_neigh[temp$pos == p], na.rm = T)
             # a healthy colony should have no sick neighbors which have more or equal number of healthy neighbors than it has sick ones
             if (N == 0) {
-              tempdat$comp[tempdat$pos %in% grids[grids[,1] == p, 2:9]] <- 'CH'
+              temp$comp[temp$pos %in% grids[grids[,1] == p, 2:9]] <- 'CH'
             }
           } else {
-            N <- sum(tempdat$sick_neigh[tempdat$pos %in% grids[grids[,1] == p, 2:9] | tempdat$pos %in% grids_sr[grids_sr[,1] == p, 2:9]] <= 
-                       tempdat$healthy_neigh[tempdat$pos == p], na.rm = T)
+            N <- sum(temp$sick_neigh[temp$pos %in% grids[grids[,1] == p, 2:9] | temp$pos %in% grids_sr[grids_sr[,1] == p, 2:9]] <= 
+                       temp$healthy_neigh[temp$pos == p], na.rm = T)
             # a sick colony should have atleast one healthy neighbor that has less sick nieghbors than it has healthy ones
             if (N > 0) {
-              tempdat$comp[tempdat$pos %in% grids[grids[,1] == p, 2:9]] <- 'CS'
+              temp$comp[temp$pos %in% grids[grids[,1] == p, 2:9]] <- 'CS'
             }
           }
         }
-        tempdat$comp[is.na(tempdat$orf_name)] = NA
-        tempdat$comp[tempdat$sick == 'Y'] = NA
-        tempdat$comp[tempdat$healthy == 'Y' & tempdat$comp == 'CH'] = NA
-        tempdat$comp[is.na(tempdat$comp)] = 'No'
+        temp$comp[is.na(temp$orf_name)] = NA
+        temp$comp[temp$sick == 'Y'] = NA
+        temp$comp[temp$healthy == 'Y' & temp$comp == 'CH'] = NA
+        temp$comp[is.na(temp$comp)] = 'No'
 
-        tempdat$average_cc <- tempdat$average
-        tempdat$average_cc[tempdat$comp == 'CS'] <- tempdat$average_cc[tempdat$comp == 'CS'] *
-          median(tempdat$average_cc[tempdat$orf_name == 'BF_control'], na.rm = T)/median(tempdat$average_cc[tempdat$comp == 'CS'], na.rm = T)
-        tempdat$average_cc[tempdat$comp == 'CH'] <- tempdat$average_cc[tempdat$comp == 'CH'] *
-          median(tempdat$average_cc[tempdat$orf_name == 'BF_control'], na.rm = T)/median(tempdat$average_cc[tempdat$comp == 'CH'], na.rm = T)
+        temp$average_cc <- temp$average
+        temp$average_cc[temp$comp == 'CS'] <- temp$average_cc[temp$comp == 'CS'] *
+          median(temp$average_cc[temp$orf_name == 'BF_control'], na.rm = T)/median(temp$average_cc[temp$comp == 'CS'], na.rm = T)
+        temp$average_cc[temp$comp == 'CH'] <- temp$average_cc[temp$comp == 'CH'] *
+          median(temp$average_cc[temp$orf_name == 'BF_control'], na.rm = T)/median(temp$average_cc[temp$comp == 'CH'], na.rm = T)
 
-        compdat <- rbind(compdat, tempdat)
+        compdat <- rbind(compdat, temp)
       }
     }
 
