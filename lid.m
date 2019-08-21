@@ -78,6 +78,7 @@
         p2c_info(2,:),...
         p2c_info(3,:),...
         p2c_info(4,:)));
+    p2c.Properties.VariableNames = {'pos','plate','row','col'};
     
     n_plates = fetch(conn, sprintf(['select distinct %s from %s a ',...
         'order by %s asc'],...
@@ -150,9 +151,6 @@
         p2c_info(2,:), p2c_info(3,:), p2c_info(4,:)));
     jpeg_data.Properties.VariableNames = {'pos','hours','replicate1','replicate2','replicate3','average',...
         'orf_name','plate','row','col'};
-    
-    p2c.Properties.VariableNames = {'pos','plate','row','col'};
-    
     
 
 %%  Upload JPEG to NORM data
