@@ -1,0 +1,11 @@
+dir /Users/saur1n/Desktop/20191017
+density 1536
+image/plate 1
+usr sbp29
+pwd 
+db saurin_test
+expt_name TEST
+p2c_name TEST_pos2coor1536
+p2c_plate 1536plate
+p2c_row 1536row
+p2c_col 1536col
