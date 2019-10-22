@@ -5,7 +5,8 @@
 %   Author: Saurin Parikh, October 2019
 %   Generate pos2coor, pos2strainid, pos2orf_name table
 %   
-%   Needs info.txt, init.txt, init_plates.xlsx, init_s2o.xlsx
+%   Needs info.txt, init.txt, init_plates.xlsx, init_s2o.xlsx in the home
+%   directory
 %   dr.saurin.parikh@gmail.com
 
 %%  Load Paths to Files and Data

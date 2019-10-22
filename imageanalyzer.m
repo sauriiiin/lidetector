@@ -5,6 +5,12 @@
 %   Author: Saurin Parikh, April 2018
 %   Updated: August, 2019
 %       - Analyze Images and Upload CS Data to SQL
+%   Updated: October, 2019
+%       - removed UI elements and added .txt
+%
+%   Needs info.txt file in the home directory or change path wherever
+%   necessary
+%
 %   dr.saurin.parikh@gmail.com
 
 %%  Load Paths to Files and Data
