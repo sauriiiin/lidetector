@@ -9,10 +9,45 @@
 %   directory
 %   dr.saurin.parikh@gmail.com
 
-%%  Load Paths to Files and Data
+%%  Load Paths to Files
 
-%     open load_toolkit.m and update the paths
+%   open load_toolkit.m and update the paths
     load_toolkit;
+
+%%  EXPERIMENTAL DESIGN AND INFORMATION
+%   Fill this information before going forward
+    dir         = '/Users/saur1n/Desktop/20191017';
+    density     = 1536;
+    image_plate = 1;
+    usr         = 'sbp29';
+    pwd         = '';
+    db          = 'saurin_test';
+    expt_name   = 'TEST';
+    p2c_name    = 'TEST_pos2coor1536';
+    p2c_plate   = '1536plate';
+    p2c_row     = '1536row';
+    p2c_col     = '1536col';
+    
+    info = [{'dir';'density';'image/plate';'usr';'pwd';'db';'expt_name';'p2c_name';'p2c_plate';'p2c_row';'p2c_col'},...
+        {dir;density;image_plate;usr;pwd;db;expt_name;p2c_name;p2c_plate;p2c_row;p2c_col}];
+    
+    writetable(cell2table(info), 'info.txt', 'Delimiter',' ',...
+        'WriteVariableNames',false)
+    
+%   Maximum number of Plates/Density at any stage of the experiment
+    
+    N_96    = 0;
+    N_384   = 2;
+    N_1536  = 2;
+    N_6144  = 0;
+    
+    init = [{'96';'384';'1536';'6144'},...
+        {N_96; N_384; N_1536; N_6144}];
+    
+    writetable(cell2table(init), 'init.txt', 'Delimiter',' ',...
+        'WriteVariableNames',false)
+    
+%%  LOADING DATA
 %     use info.txt in the directory as a example
 %     place your file in the MATLAB directory
     fileID = fopen('info.txt','r');
@@ -25,6 +60,7 @@
       data{k}=xlsread('init_plates.xlsx',sheet_name{k});
     end
     
+%%  INITILIZING SQL CONNECTION AND VARIABLE NAMES    
     sql_info = {info{1,2}{4:6}}; % {usr, pwd, db}
     conn = connSQL(sql_info);
     
