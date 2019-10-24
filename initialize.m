@@ -23,10 +23,10 @@
     pwd         = '';
     db          = 'saurin_test';
     expt_name   = 'TEST';
-    p2c_name    = 'TEST_pos2coor1536';
-    p2c_plate   = '1536plate';
-    p2c_row     = '1536row';
-    p2c_col     = '1536col';
+    p2c_name    = 'TEST_pos2coor';
+    p2c_plate   = 'plate';
+    p2c_row     = 'row';
+    p2c_col     = 'col';
     
     info = [{'dir';'density';'image/plate';'usr';'pwd';'db';'expt_name';'p2c_name';'p2c_plate';'p2c_row';'p2c_col'},...
         {dir;density;image_plate;usr;pwd;db;expt_name;p2c_name;p2c_plate;p2c_row;p2c_col}];
@@ -69,14 +69,17 @@
     tablename_p2id      = sprintf('%s_pos2strainid',expt_name);
     colnames_p2id       = {'pos','strain_id'};
     
-    tablename_p2c96    = sprintf('%s_pos2coor96',expt_name);
-    colnames_p2c96     = {'pos','96plate','96row','96col'};
-    tablename_p2c384    = sprintf('%s_pos2coor384',expt_name);
-    colnames_p2c384     = {'pos','384plate','384row','384col'};
-    tablename_p2c1536   = sprintf('%s_pos2coor1536',expt_name);
-    colnames_p2c1536    = {'pos','1536plate','1536row','1536col'};    
-    tablename_p2c6144   = sprintf('%s_pos2coor6144',expt_name);
-    colnames_p2c6144    = {'pos','6144plate','6144row','6144col'};
+    tablename_p2c    = info{1,2}{8};
+    colnames_p2c     = {'pos','density','plate','row','col'};
+    
+%     tablename_p2c96    = sprintf('%s_pos2coor96',expt_name);
+%     colnames_p2c96     = {'pos','96plate','96row','96col'};
+%     tablename_p2c384    = sprintf('%s_pos2coor384',expt_name);
+%     colnames_p2c384     = {'pos','384plate','384row','384col'};
+%     tablename_p2c1536   = sprintf('%s_pos2coor1536',expt_name);
+%     colnames_p2c1536    = {'pos','1536plate','1536row','1536col'};    
+%     tablename_p2c6144   = sprintf('%s_pos2coor6144',expt_name);
+%     colnames_p2c6144    = {'pos','6144plate','6144row','6144col'};
     
     tablename_s2o      = sprintf('%s_strainid2orf_name',expt_name);
     colnames_s2o       = {'strain_id','orf_name'};
@@ -143,7 +146,7 @@
             for i = 1:str2num(init{1,2}{1})
                 strain{1,i} = grid2row(data{i});
                 
-                tbl_p2c{1,i} = [pos{1,i};coor{1,i}{:}]';
+                tbl_p2c{1,i} = [pos{1,i};ones(1,length(pos{1,i}))*length(pos{1,i});coor{1,i}{:}]';
                 tbl_p2s{1,i} = [pos{1,i};strain{1,i}]';
             end
             for i = 1:str2num(init{1,2}{2})
@@ -156,7 +159,7 @@
                     strain{1,upscale{2}(i,3)},...
                     strain{1,upscale{2}(i,4)}));
                 
-                tbl_p2c{2,i} = [pos{2,i};coor{2,i}{:}]';
+                tbl_p2c{2,i} = [pos{2,i};ones(1,length(pos{2,i}))*length(pos{2,i});coor{2,i}{:}]';
                 tbl_p2s{2,i} = [pos{2,i};strain{2,i}]';
             end
             for i = 1:str2num(init{1,2}{3})
@@ -169,7 +172,7 @@
                     strain{2,upscale{3}(i,3)},...
                     strain{2,upscale{3}(i,4)}));
                 
-                tbl_p2c{3,i} = [pos{3,i};coor{3,i}{:}]';
+                tbl_p2c{3,i} = [pos{3,i};ones(1,length(pos{3,i}))*length(pos{3,i});coor{3,i}{:}]';
                 tbl_p2s{3,i} = [pos{3,i};strain{3,i}]';
             end
             for i = 1:str2num(init{1,2}{4})
@@ -189,7 +192,7 @@
             for i = 1:str2num(init{1,2}{2})
                 strain{2,i} = grid2row(data{i});
                 
-                tbl_p2c{2,i} = [pos{2,i};coor{2,i}{:}]';
+                tbl_p2c{2,i} = [pos{2,i};ones(1,length(pos{2,i}))*length(pos{2,i});coor{2,i}{:}]';
                 tbl_p2s{2,i} = [pos{2,i};strain{2,i}]';
             end
             for i = 1:str2num(init{1,2}{3})
@@ -202,7 +205,7 @@
                     strain{2,upscale{3}(i,3)},...
                     strain{2,upscale{3}(i,4)}));
                 
-                tbl_p2c{3,i} = [pos{3,i};coor{3,i}{:}]';
+                tbl_p2c{3,i} = [pos{3,i};ones(1,length(pos{3,i}))*length(pos{3,i});coor{3,i}{:}]';
                 tbl_p2s{3,i} = [pos{3,i};strain{3,i}]';
             end
             for i = 1:str2num(init{1,2}{4})
@@ -215,14 +218,14 @@
                     strain{3,upscale{4}(i,3)},...
                     strain{3,upscale{4}(i,4)}));
                 
-                tbl_p2c{4,i} = [pos{4,i};coor{4,i}{:}]';
+                tbl_p2c{4,i} = [pos{4,i};ones(1,length(pos{4,i}))*length(pos{4,i});coor{4,i}{:}]';
                 tbl_p2s{4,i} = [pos{4,i};strain{4,i}]';
             end
         elseif iden == 1536
             for i = 1:str2num(init{1,2}{3})
                 strain{3,i} = grid2row(data{i});
                 
-                tbl_p2c{3,i} = [pos{3,i};coor{3,i}{:}]';
+                tbl_p2c{3,i} = [pos{3,i};ones(1,length(pos{3,i}))*length(pos{3,i});coor{3,i}{:}]';
                 tbl_p2s{3,i} = [pos{3,i};strain{3,i}]';
             end
             for i = 1:str2num(init{1,2}{4})
@@ -235,14 +238,14 @@
                     strain{3,upscale{4}(i,3)},...
                     strain{3,upscale{4}(i,4)}));
                 
-                tbl_p2c{4,i} = [pos{4,i};coor{4,i}{:}]';
+                tbl_p2c{4,i} = [pos{4,i};ones(1,length(pos{4,i}))*length(pos{4,i});coor{4,i}{:}]';
                 tbl_p2s{4,i} = [pos{4,i};strain{4,i}]';
             end
         else
             for i = 1:str2num(init{1,2}{4})
                 strain{4,i} = grid2row(data{i});
                 
-                tbl_p2c{4,i} = [pos{4,i};coor{4,i}{:}]';
+                tbl_p2c{4,i} = [pos{4,i};ones(1,length(pos{4,i}))*length(pos{4,i});coor{4,i}{:}]';
                 tbl_p2s{4,i} = [pos{4,i};strain{4,i}]';
             end
         end
@@ -250,57 +253,70 @@
     
 %%  UPLOAD P2C & P2S DATA TO SQL
     
+%   Position to ORF_name
     exec(conn, sprintf('drop table %s',tablename_p2id)); 
     exec(conn, sprintf(['create table %s ',...
         '(pos int not null, strain_id int not null)'], tablename_p2id));
-    
-    for i = 1:length(tbl_p2s)
+    for i = 1:size(tbl_p2s,1)
         if ~isempty(tbl_p2s{i})
-            for ii = 1:size(tbl_p2s{2},2)
+            for ii = 1:size(tbl_p2s,2)
                 datainsert(conn,tablename_p2id,colnames_p2id,tbl_p2s{i,ii});
             end
         end
     end
     
-    if ~isempty(tbl_p2c{1})
-        exec(conn, sprintf('drop table %s',tablename_p2c96)); 
-        exec(conn, sprintf(['create table %s (pos int not null, ',...
-            '96plate int not null, '...
-            '96row int not null, 96col int not null)'],tablename_p2c96));
-        for ii = 1:str2num(init{1,2}{1})
-            datainsert(conn,tablename_p2c96,colnames_p2c96,tbl_p2c{1,ii});
+%   Position to Coordinate
+    exec(conn, sprintf('drop table %s',tablename_p2c)); 
+    exec(conn, sprintf(['create table %s (pos int not null, ',...
+            'density int not null, plate int not null, '...
+            'row int not null, col int not null)'],tablename_p2c));
+    for i = 1:size(tbl_p2c,1)
+        if ~isempty(tbl_p2c{i})
+            for ii = 1:size(tbl_p2c,2)
+                datainsert(conn,tablename_p2c,colnames_p2c,tbl_p2c{i,ii});
+            end
         end
     end
     
-    if ~isempty(tbl_p2c{2})
-        exec(conn, sprintf('drop table %s',tablename_p2c384)); 
-        exec(conn, sprintf(['create table %s (pos int not null, ',...
-            '384plate int not null, '...
-            '384row int not null, 384col int not null)'],tablename_p2c384));
-        for ii = 1:str2num(init{1,2}{2})
-            datainsert(conn,tablename_p2c384,colnames_p2c384,tbl_p2c{2,ii});
-        end
-    end
-    
-    if ~isempty(tbl_p2c{3})
-        exec(conn, sprintf('drop table %s',tablename_p2c1536)); 
-        exec(conn, sprintf(['create table %s (pos int not null, ',...
-            '1536plate int not null, '...
-            '1536row int not null, 1536col int not null)'],tablename_p2c1536));
-        for ii = 1:str2num(init{1,2}{3})
-            datainsert(conn,tablename_p2c1536,colnames_p2c1536,tbl_p2c{3,ii});
-        end
-    end
-    
-    if ~isempty(tbl_p2c{4})
-        exec(conn, sprintf('drop table %s',tablename_p2c6144)); 
-        exec(conn, sprintf(['create table %s (pos int not null, ',...
-            '6144plate int not null, '...
-            '6144row int not null, 6144col int not null)'],tablename_p2c6144));
-        for ii = 1:str2num(init{1,2}{4})
-            datainsert(conn,tablename_p2c6144,colnames_p2c6144,tbl_p2c{4,ii});
-        end
-    end
+%     if ~isempty(tbl_p2c{1})
+%         exec(conn, sprintf('drop table %s',tablename_p2c96)); 
+%         exec(conn, sprintf(['create table %s (pos int not null, ',...
+%             '96plate int not null, '...
+%             '96row int not null, 96col int not null)'],tablename_p2c96));
+%         for ii = 1:str2num(init{1,2}{1})
+%             datainsert(conn,tablename_p2c96,colnames_p2c96,tbl_p2c{1,ii});
+%         end
+%     end
+%     
+%     if ~isempty(tbl_p2c{2})
+%         exec(conn, sprintf('drop table %s',tablename_p2c384)); 
+%         exec(conn, sprintf(['create table %s (pos int not null, ',...
+%             '384plate int not null, '...
+%             '384row int not null, 384col int not null)'],tablename_p2c384));
+%         for ii = 1:str2num(init{1,2}{2})
+%             datainsert(conn,tablename_p2c384,colnames_p2c384,tbl_p2c{2,ii});
+%         end
+%     end
+%     
+%     if ~isempty(tbl_p2c{3})
+%         exec(conn, sprintf('drop table %s',tablename_p2c1536)); 
+%         exec(conn, sprintf(['create table %s (pos int not null, ',...
+%             '1536plate int not null, '...
+%             '1536row int not null, 1536col int not null)'],tablename_p2c1536));
+%         for ii = 1:str2num(init{1,2}{3})
+%             datainsert(conn,tablename_p2c1536,colnames_p2c1536,tbl_p2c{3,ii});
+%         end
+%     end
+%     
+%     if ~isempty(tbl_p2c{4})
+%         exec(conn, sprintf('drop table %s',tablename_p2c6144)); 
+%         exec(conn, sprintf(['create table %s (pos int not null, ',...
+%             '6144plate int not null, '...
+%             '6144row int not null, 6144col int not null)'],tablename_p2c6144));
+%         for ii = 1:str2num(init{1,2}{4})
+%             datainsert(conn,tablename_p2c6144,colnames_p2c6144,tbl_p2c{4,ii});
+%         end
+%     end
     
 %%  STRAIN_ID 2 ORF_NAME
 
@@ -323,6 +339,12 @@
         tablename_p2id,...
         tablename_s2o));
     
+%%  BORDERPOS
+
     
+
+
+
+
 
     
