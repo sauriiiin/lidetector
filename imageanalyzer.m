@@ -13,12 +13,12 @@
 %
 %   dr.saurin.parikh@gmail.com
 
-%%  Load Paths to Files and Data
+%%  Load Paths to Files and Expt Info
 
-%     open load_toolkit.m and update the paths
+%   open load_toolkit.m and update the paths
     load_toolkit;
-%     use info.txt in the directory as a example
-%     place your file in the MATLAB directory
+%   use info.txt in the directory as a example
+%   place your file in the MATLAB directory
     fileID = fopen('info.txt','r');
     info = textscan(fileID, '%s%s');
 
@@ -64,7 +64,7 @@
     
 %%  PLATE DENSITY AND ANALYSIS PARAMETERS
 
-    density = 1536; % EDIT THIS ACCORDING TO IMAGES
+    density = 384; % EDIT THIS ACCORDING TO IMAGES
     
     if density == 6144
         dimensions = [64 96];
@@ -217,7 +217,7 @@
 %     p2c.Properties.VariableNames = {'pos','density','plate','row','col'};
 
     exec(conn, sprintf('drop table %s',tablename_raw));  
-    exec(conn, sprintf(['create table %s (pos int not null, hours int not null,'...
+    exec(conn, sprintf(['create table %s (pos int not null, hours double not null,'...
         'replicate1 int default null, replicate2 int default null, ',...
         'replicate3 int default null, average double default null)'], tablename_raw));
 
@@ -263,6 +263,6 @@
         'where pos in ',...
         '(select pos from %s)'],tablename_jpeg,tablename_sbox));
 
-
 %%  END
+    close(conn)
 %%

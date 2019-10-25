@@ -17,7 +17,7 @@
 
 %%  EXPERIMENTAL DESIGN AND INFORMATION
 %   Fill this information before going forward
-    dir             = '/Users/saur1n/Desktop/20191017';
+    dir             = '/Users/saur1n/Desktop/MPP1';
     image_plate     = 1;
     usr             = 'sbp29';
     pwd             = '';
@@ -32,15 +32,16 @@
     s2o_tblname     = 'TEST_strainid2orf_name';
     bpos_tblname    = 'TEST_borderpos';
     sbox_tblname    = 'TEST_SET1_smudgebox';
+    cont_name       = 'NA';
     
     info = [{'dir';'image/plate';'usr';'pwd';'db';'expt_name';...
         'p2c_tblname';'p2c_plate';'p2c_row';'p2c_col';...
         'p2s_tblname';'p2o_tblname';'s2o_tblname';...
-        'bpos_tblname';'sbox_tblname'},...
+        'bpos_tblname';'sbox_tblname';'cont_name'},...
         {dir;image_plate;usr;pwd;db;expt_name;...
         p2c_tblname;p2c_plate;p2c_row;p2c_col;...
         p2s_tblname;p2o_tblname;s2o_tblname;
-        bpos_tblname;sbox_tblname}];
+        bpos_tblname;sbox_tblname;cont_name}];
     
     writetable(cell2table(info), 'info.txt', 'Delimiter',' ',...
         'WriteVariableNames',false)
@@ -351,4 +352,5 @@
     end
 
 %%  END
+    close(conn)
 %%    

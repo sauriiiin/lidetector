@@ -13,3 +13,4 @@ p2o_tblname TEST_pos2orf_name
 s2o_tblname TEST_strainid2orf_name
 bpos_tblname TEST_borderpos
 sbox_tblname TEST_SET1_smudgebox
+cont_name BY4741
