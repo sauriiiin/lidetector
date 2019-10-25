@@ -11,9 +11,9 @@
 
 %%
 
-    function data = fitstats(table, db, usr, pwd)
+    function data = fitstats(table, usr, pwd, db)
     
-        conn = connSQL(db, usr, pwd);
+        conn = connSQL(usr, pwd, db);
         inc.tt=1;
         hrs = fetch(conn, sprintf(['select distinct hours ',...
             'from %s'],table));
