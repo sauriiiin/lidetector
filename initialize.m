@@ -375,9 +375,22 @@
     end
     
 %%  SMUDGE_BOX
+%     density, plate, row, col
 
-    sbox = [];
+    sbox = [1536,1,1,1;1536,2,3,4;1536,2,10,10];
     
+    exec(conn, sprintf('drop table %s',tablename_sbox));
+    exec(conn, sprintf(['create table %s ',...
+        '(pos int not null)'],tablename_sbox));
+    
+    for i = 1:size(sbox,1)
+        exec(conn, sprintf(['insert into %s ',...
+            'select pos from %s ',...
+            'where density = %d ',...
+            'and plate = %d and row = %d and col = %d'],...
+            tablename_sbox, tablename_p2c,...
+            sbox(i,:)));
+    end
 
 
     
