@@ -156,6 +156,11 @@
     cs = load_colony_sizes(files);
 %     size(cs)    % should be = (number of plates x 3 x number of time points) x density
 
+%   zoom level corrector of pixel counts    
+    if ~isempty(multplr)
+        cs = cs.*multplr;
+    end
+
 %%  Mean Colony Size For Each Plate
 
     cs_mean = [];
@@ -204,9 +209,10 @@
         
     p2c_info = {info{1,2}{8:11}};
     p2c = fetch(conn, sprintf(['select * from %s a ',...
+        'where density = %d ',...
         'order by a.%s, a.%s, a.%s'],...
-        p2c_info{:}));
-    p2c.Properties.VariableNames = {'pos','plate','row','col'};
+        p2c_info{1},density,p2c_info{2},p2c_info{4},p2c_info{3}));
+%     p2c.Properties.VariableNames = {'pos','density','plate','row','col'};
 
     exec(conn, sprintf('drop table %s',tablename_raw));  
     exec(conn, sprintf(['create table %s (pos int not null, hours int not null,'...

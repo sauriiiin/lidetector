@@ -16,26 +16,36 @@
 
 %%  EXPERIMENTAL DESIGN AND INFORMATION
 %   Fill this information before going forward
-    dir         = '/Users/saur1n/Desktop/20191017';
-    density     = 1536;
-    image_plate = 1;
-    usr         = 'sbp29';
-    pwd         = '';
-    db          = 'saurin_test';
-    expt_name   = 'TEST';
-    p2c_name    = 'TEST_pos2coor';
-    p2c_plate   = 'plate';
-    p2c_row     = 'row';
-    p2c_col     = 'col';
+    dir             = '/Users/saur1n/Desktop/20191017';
+    density         = 1536;
+    image_plate     = 1;
+    usr             = 'sbp29';
+    pwd             = '';
+    db              = 'saurin_test';
+    expt_name       = 'TEST';
+    p2c_tblname     = 'TEST_pos2coor';
+    p2c_plate       = 'plate';
+    p2c_row         = 'row';
+    p2c_col         = 'col';
+    p2s_tblname     = 'TEST_pos2strainid';
+    p2o_tblname     = 'TEST_pos2orf_name';
+    s2o_tblname     = 'TEST_strainid2orf_name';
+    bpos_tblname    = 'TEST_borderpos';
+    sbox_tblname    = 'TEST_smudgebox';
     
-    info = [{'dir';'density';'image/plate';'usr';'pwd';'db';'expt_name';'p2c_name';'p2c_plate';'p2c_row';'p2c_col'},...
-        {dir;density;image_plate;usr;pwd;db;expt_name;p2c_name;p2c_plate;p2c_row;p2c_col}];
+    info = [{'dir';'density';'image/plate';'usr';'pwd';'db';'expt_name';...
+        'p2c_tblname';'p2c_plate';'p2c_row';'p2c_col';...
+        'p2s_tblname';'p2o_tblname';'s2o_tblname';...
+        'bpos_tblname';'sbox_tblname'},...
+        {dir;density;image_plate;usr;pwd;db;expt_name;...
+        p2c_tblname;p2c_plate;p2c_row;p2c_col;...
+        p2s_tblname;p2o_tblname;s2o_tblname;
+        bpos_tblname;sbox_tblname}];
     
     writetable(cell2table(info), 'info.txt', 'Delimiter',' ',...
         'WriteVariableNames',false)
     
 %   Maximum number of Plates/Density at any stage of the experiment
-    
     N_96    = 0;
     N_384   = 2;
     N_1536  = 2;
@@ -66,25 +76,16 @@
     
     expt_name = info{1,2}{7};
     
-    tablename_p2id      = sprintf('%s_pos2strainid',expt_name);
-    colnames_p2id       = {'pos','strain_id'};
+    tablename_p2id  = info{1,2}{12};
+    tablename_p2c   = info{1,2}{8};
+    tablename_s2o   = info{1,2}{14};
+    tablename_p2o   = info{1,2}{13};
+    tablename_bpos  = info{1,2}{15};
+    tablename_sbox  = info{1,2}{16};
     
-    tablename_p2c    = info{1,2}{8};
-    colnames_p2c     = {'pos','density','plate','row','col'};
-    
-%     tablename_p2c96    = sprintf('%s_pos2coor96',expt_name);
-%     colnames_p2c96     = {'pos','96plate','96row','96col'};
-%     tablename_p2c384    = sprintf('%s_pos2coor384',expt_name);
-%     colnames_p2c384     = {'pos','384plate','384row','384col'};
-%     tablename_p2c1536   = sprintf('%s_pos2coor1536',expt_name);
-%     colnames_p2c1536    = {'pos','1536plate','1536row','1536col'};    
-%     tablename_p2c6144   = sprintf('%s_pos2coor6144',expt_name);
-%     colnames_p2c6144    = {'pos','6144plate','6144row','6144col'};
-    
-    tablename_s2o      = sprintf('%s_strainid2orf_name',expt_name);
-    colnames_s2o       = {'strain_id','orf_name'};
-    
-    tablename_p2o   = sprintf('%s_pos2orf_name',expt_name);
+    colnames_p2id   = {'pos','strain_id'};
+    colnames_p2c    = {'pos','density','plate','row','col'};
+    colnames_s2o    = {'strain_id','orf_name'};
     
 %%  INDICES
 
@@ -341,10 +342,42 @@
     
 %%  BORDERPOS
 
+    exec(conn, sprintf('drop table %s',tablename_bpos));
+    exec(conn, sprintf(['create table %s ',...
+        '(pos int not null)'],tablename_bpos));
     
+    p2c_den = fetch(conn, sprintf(['select distinct density ',...
+        'from %s order by density asc'], info{1,2}{8}));
+    
+    for d = 1:length(p2c_den.density)
+        if p2c_den.density(d) == 384
+            exec(conn, sprintf(['insert into %s ',...
+                'select pos from %s ',...
+                'where density = 384 ',...
+                'and (row in (1,16) or col in (1,24))'],...
+                tablename_bpos, tablename_p2c));
+        elseif p2c_den.density(d) == 1536
+            exec(conn, sprintf(['insert into %s ',...
+                'select pos from %s ',...
+                'where density = 1536 ',...
+                'and (row in (1,2,31,32) or col in (1,2,47,48))'],...
+                tablename_bpos, tablename_p2c));
+        elseif p2c_den.density(d) == 6144
+            exec(conn, sprintf(['insert into %s ',...
+                'select pos from %s ',...
+                'where density = 6144 ',...
+                'and (row in (1,2,3,4,61,62,63,64) or ',...
+                'col in (1,2,3,4,93,94,95,96))'],...
+                tablename_bpos, tablename_p2c));
+        else
+            
+        end
+    end
+    
+%%  SMUDGE_BOX
 
-
-
+    sbox = [];
+    
 
 
     
