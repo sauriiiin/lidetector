@@ -62,8 +62,10 @@
        multplr = [multplr; pix_cor(pix_cor(:,1) == fl,2)]; 
     end
     
-%%
-    density = str2num(info{1,2}{2});
+%%  PLATE DENSITY AND ANALYSIS PARAMETERS
+
+    density = 1536; % EDIT THIS ACCORDING TO IMAGES
+    
     if density == 6144
         dimensions = [64 96];
     elseif density == 1536
@@ -199,15 +201,15 @@
     end
     master = master';
 
-%%  Upload Colony Size Data to SQL
+%%  Upload RAW Colony Size Data to SQL
 
-    sql_info = {info{1,2}{4:6}}; % {usr, pwd, db}
+    sql_info = {info{1,2}{3:5}}; % {usr, pwd, db}
     conn = connSQL(sql_info);
     
-    expt_name = info{1,2}{7};
+    expt_name = info{1,2}{6};
     tablename_raw  = sprintf('%s_%d_RAW',expt_name,density);
         
-    p2c_info = {info{1,2}{8:11}};
+    p2c_info = {info{1,2}{7:10}};
     p2c = fetch(conn, sprintf(['select * from %s a ',...
         'where density = %d ',...
         'order by a.%s, a.%s, a.%s'],...
@@ -232,5 +234,35 @@
     tic
     datainsert(conn,tablename_raw,colnames_raw,data);
     toc
+    
+%%  SPATIAL cleanup
+%   Border colonies, light artefact and smudge correction
+
+    tablename_jpeg  = sprintf('%s_%d_JPEG',expt_name,density);
+    tablename_bpos  = info{1,2}{14};
+    tablename_sbox  = info{1,2}{15};
+
+    exec(conn, sprintf('drop table %s',tablename_jpeg));
+    exec(conn, sprintf(['create table %s ',...
+        '(select * from %s)'], tablename_jpeg, tablename_raw));
+
+    exec(conn, sprintf(['update %s ',...
+        'set replicate1 = NULL, replicate2 = NULL, ',...
+        'replicate3 = NULL, average = NULL ',...
+        'where pos in ',...
+        '(select pos from %s)'],tablename_jpeg,tablename_bpos));
+
+    exec(conn, sprintf(['update %s ',...
+        'set replicate1 = NULL, replicate2 = NULL, ',...
+        'replicate3 = NULL, average = NULL ',...
+        'where average <= 10'],tablename_jpeg));
+
+    exec(conn, sprintf(['update %s ',...
+        'set replicate1 = NULL, replicate2 = NULL, ',...
+        'replicate3 = NULL, average = NULL ',...
+        'where pos in ',...
+        '(select pos from %s)'],tablename_jpeg,tablename_sbox));
+
 
 %%  END
+%%

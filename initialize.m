@@ -1,12 +1,13 @@
 %%  Sau MATLAB Colony Analyzer Toolkit
 %
-%%  imageanalyzer.m
+%%  initialize.m
 
 %   Author: Saurin Parikh, October 2019
 %   Generate pos2coor, pos2strainid, pos2orf_name table
 %   
 %   Needs info.txt, init.txt, init_plates.xlsx, init_s2o.xlsx in the home
 %   directory
+% 
 %   dr.saurin.parikh@gmail.com
 
 %%  Load Paths to Files
@@ -17,12 +18,11 @@
 %%  EXPERIMENTAL DESIGN AND INFORMATION
 %   Fill this information before going forward
     dir             = '/Users/saur1n/Desktop/20191017';
-    density         = 1536;
     image_plate     = 1;
     usr             = 'sbp29';
     pwd             = '';
     db              = 'saurin_test';
-    expt_name       = 'TEST';
+    expt_name       = 'TEST_SET1';
     p2c_tblname     = 'TEST_pos2coor';
     p2c_plate       = 'plate';
     p2c_row         = 'row';
@@ -31,13 +31,13 @@
     p2o_tblname     = 'TEST_pos2orf_name';
     s2o_tblname     = 'TEST_strainid2orf_name';
     bpos_tblname    = 'TEST_borderpos';
-    sbox_tblname    = 'TEST_smudgebox';
+    sbox_tblname    = 'TEST_SET1_smudgebox';
     
-    info = [{'dir';'density';'image/plate';'usr';'pwd';'db';'expt_name';...
+    info = [{'dir';'image/plate';'usr';'pwd';'db';'expt_name';...
         'p2c_tblname';'p2c_plate';'p2c_row';'p2c_col';...
         'p2s_tblname';'p2o_tblname';'s2o_tblname';...
         'bpos_tblname';'sbox_tblname'},...
-        {dir;density;image_plate;usr;pwd;db;expt_name;...
+        {dir;image_plate;usr;pwd;db;expt_name;...
         p2c_tblname;p2c_plate;p2c_row;p2c_col;...
         p2s_tblname;p2o_tblname;s2o_tblname;
         bpos_tblname;sbox_tblname}];
@@ -58,30 +58,31 @@
         'WriteVariableNames',false)
     
 %%  LOADING DATA
-%     use info.txt in the directory as a example
-%     place your file in the MATLAB directory
+%   Using info.txt and init.txt files just created
     fileID = fopen('info.txt','r');
     info = textscan(fileID, '%s%s');
     fileID = fopen('init.txt','r');
     init = textscan(fileID, '%s%s');
-    
+
+%   init_plate.xlsx has initial plate maps - one per sheet
+%   each mutant is represented by a unique numeric identifier (strain_id)
     [~,sheet_name]=xlsfinfo('init_plates.xlsx');
     for k=1:numel(sheet_name)
       data{k}=xlsread('init_plates.xlsx',sheet_name{k});
     end
     
 %%  INITILIZING SQL CONNECTION AND VARIABLE NAMES    
-    sql_info = {info{1,2}{4:6}}; % {usr, pwd, db}
+    sql_info = {info{1,2}{3:5}}; % {usr, pwd, db}
     conn = connSQL(sql_info);
     
-    expt_name = info{1,2}{7};
+    expt_name = info{1,2}{6};
     
-    tablename_p2id  = info{1,2}{12};
-    tablename_p2c   = info{1,2}{8};
-    tablename_s2o   = info{1,2}{14};
-    tablename_p2o   = info{1,2}{13};
-    tablename_bpos  = info{1,2}{15};
-    tablename_sbox  = info{1,2}{16};
+    tablename_p2id  = info{1,2}{11};
+    tablename_p2c   = info{1,2}{7};
+    tablename_s2o   = info{1,2}{13};
+    tablename_p2o   = info{1,2}{12};
+    tablename_bpos  = info{1,2}{14};
+    tablename_sbox  = info{1,2}{15};
     
     colnames_p2id   = {'pos','strain_id'};
     colnames_p2c    = {'pos','density','plate','row','col'};
@@ -90,22 +91,19 @@
 %%  INDICES
 
     coor = [];
+    for i = 1:str2num(init{1,2}{1})
+        coor{1,i} = {[ones(1,96)*i;indices(96)]};
+    end
+    for i = 1:str2num(init{1,2}{2})
+        coor{2,i} = {[ones(1,384)*i;indices(384)]};
+    end
+    for i = 1:str2num(init{1,2}{3})
+        coor{3,i} = {[ones(1,1536)*i;indices(1536)]};
+    end
     for i = 1:str2num(init{1,2}{4})
         coor{4,i} = {[ones(1,6144)*i;indices(6144)]};
     end
 
-    for i = 1:str2num(init{1,2}{3})
-        coor{3,i} = {[ones(1,1536)*i;indices(1536)]};
-    end
-
-    for i = 1:str2num(init{1,2}{2})
-        coor{2,i} = {[ones(1,384)*i;indices(384)]};
-    end
-    
-    for i = 1:str2num(init{1,2}{1})
-        coor{1,i} = {[ones(1,96)*i;indices(96)]};
-    end
-    
 %%  STARTER PLATE POS
 
     pos = [];
@@ -279,46 +277,6 @@
         end
     end
     
-%     if ~isempty(tbl_p2c{1})
-%         exec(conn, sprintf('drop table %s',tablename_p2c96)); 
-%         exec(conn, sprintf(['create table %s (pos int not null, ',...
-%             '96plate int not null, '...
-%             '96row int not null, 96col int not null)'],tablename_p2c96));
-%         for ii = 1:str2num(init{1,2}{1})
-%             datainsert(conn,tablename_p2c96,colnames_p2c96,tbl_p2c{1,ii});
-%         end
-%     end
-%     
-%     if ~isempty(tbl_p2c{2})
-%         exec(conn, sprintf('drop table %s',tablename_p2c384)); 
-%         exec(conn, sprintf(['create table %s (pos int not null, ',...
-%             '384plate int not null, '...
-%             '384row int not null, 384col int not null)'],tablename_p2c384));
-%         for ii = 1:str2num(init{1,2}{2})
-%             datainsert(conn,tablename_p2c384,colnames_p2c384,tbl_p2c{2,ii});
-%         end
-%     end
-%     
-%     if ~isempty(tbl_p2c{3})
-%         exec(conn, sprintf('drop table %s',tablename_p2c1536)); 
-%         exec(conn, sprintf(['create table %s (pos int not null, ',...
-%             '1536plate int not null, '...
-%             '1536row int not null, 1536col int not null)'],tablename_p2c1536));
-%         for ii = 1:str2num(init{1,2}{3})
-%             datainsert(conn,tablename_p2c1536,colnames_p2c1536,tbl_p2c{3,ii});
-%         end
-%     end
-%     
-%     if ~isempty(tbl_p2c{4})
-%         exec(conn, sprintf('drop table %s',tablename_p2c6144)); 
-%         exec(conn, sprintf(['create table %s (pos int not null, ',...
-%             '6144plate int not null, '...
-%             '6144row int not null, 6144col int not null)'],tablename_p2c6144));
-%         for ii = 1:str2num(init{1,2}{4})
-%             datainsert(conn,tablename_p2c6144,colnames_p2c6144,tbl_p2c{4,ii});
-%         end
-%     end
-    
 %%  STRAIN_ID 2 ORF_NAME
 
     tbl_s2o = readtable('init_s2o.xlsx');
@@ -347,7 +305,7 @@
         '(pos int not null)'],tablename_bpos));
     
     p2c_den = fetch(conn, sprintf(['select distinct density ',...
-        'from %s order by density asc'], info{1,2}{8}));
+        'from %s order by density asc'], tablename_p2c));
     
     for d = 1:length(p2c_den.density)
         if p2c_den.density(d) == 384
@@ -375,8 +333,8 @@
     end
     
 %%  SMUDGE_BOX
-%     density, plate, row, col
 
+%   [density, plate, row, col ; density, plate, row, col ;...; density, plate, row, col]
     sbox = [1536,1,1,1;1536,2,3,4;1536,2,10,10];
     
     exec(conn, sprintf('drop table %s',tablename_sbox));
@@ -392,5 +350,5 @@
             sbox(i,:)));
     end
 
-
-    
+%%  END
+%%    
