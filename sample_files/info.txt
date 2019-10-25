@@ -1,11 +1,15 @@
 dir /Users/saur1n/Desktop/20191017
-density 1536
 image/plate 1
 usr sbp29
 pwd 
 db saurin_test
-expt_name TEST
-p2c_name TEST_pos2coor1536
-p2c_plate 1536plate
-p2c_row 1536row
-p2c_col 1536col
+expt_name TEST_SET1
+p2c_tblname TEST_pos2coor
+p2c_plate plate
+p2c_row row
+p2c_col col
+p2s_tblname TEST_pos2strainid
+p2o_tblname TEST_pos2orf_name
+s2o_tblname TEST_strainid2orf_name
+bpos_tblname TEST_borderpos
+sbox_tblname TEST_SET1_smudgebox
