@@ -24,6 +24,9 @@
 
 %%  Initialization
     
+    % change this to indicate the image directory
+    file_dir = '/home/sbp29/RAW_Data/Branden/multipin_pilot/problem_imgs/';
+    
     hours = []; 
     files = {};
     filedir = dir(info{1,2}{1});
@@ -102,12 +105,13 @@
 
 %%  Manually fix images #1
 
-    for ii = 1 : length(pos)
-        tic;
-        analyze_image( files{pos(ii)}, params{:}, ...
-            'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
-        toc;
-    end
+%     pos = 1:length(files);
+%     for ii = 1 : length(pos)
+%         tic;
+%         analyze_image( files{pos(ii)}, params{:}, ...
+%             'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
+%         toc;
+%     end
 
 % %%  Find Low Correlation Images
 % 
