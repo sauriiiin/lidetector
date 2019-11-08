@@ -17,31 +17,24 @@
 
 %%  EXPERIMENTAL DESIGN AND INFORMATION
 %   Fill this information before going forward
-    file_dir        = '/Users/saur1n/Desktop/MPP1';
+
     image_plate     = 1;
     usr             = 'sbp29';
     pwd             = '';
     db              = 'saurin_test';
-    expt_name       = 'TEST_SET1';
     p2c_tblname     = 'TEST_pos2coor';
-    p2c_plate       = 'plate';
-    p2c_row         = 'row';
-    p2c_col         = 'col';
     p2s_tblname     = 'TEST_pos2strainid';
     p2o_tblname     = 'TEST_pos2orf_name';
     s2o_tblname     = 'TEST_strainid2orf_name';
     bpos_tblname    = 'TEST_borderpos';
-    sbox_tblname    = 'TEST_SET1_smudgebox';
-    cont_name       = 'NA';
+    cont_name       = 'BF_control';
     
-    info = [{'file_dir';'image/plate';'usr';'pwd';'db';'expt_name';...
-        'p2c_tblname';'p2c_plate';'p2c_row';'p2c_col';...
-        'p2s_tblname';'p2o_tblname';'s2o_tblname';...
-        'bpos_tblname';'sbox_tblname';'cont_name'},...
-        {file_dir;image_plate;usr;pwd;db;expt_name;...
-        p2c_tblname;p2c_plate;p2c_row;p2c_col;...
-        p2s_tblname;p2o_tblname;s2o_tblname;
-        bpos_tblname;sbox_tblname;cont_name}];
+    info = [{'image/plate';'usr';'pwd';'db';...
+        'p2c_tblname';'p2s_tblname';'p2o_tblname';...
+        's2o_tblname';'bpos_tblname';'cont_name'},...
+        {image_plate;usr;pwd;db;...
+        p2c_tblname;p2s_tblname;p2o_tblname;...
+        s2o_tblname;bpos_tblname;cont_name}];
     
     writetable(cell2table(info), 'info.txt', 'Delimiter',' ',...
         'WriteVariableNames',false)
@@ -58,6 +51,13 @@
     writetable(cell2table(init), 'init.txt', 'Delimiter',' ',...
         'WriteVariableNames',false)
     
+%   UPSCALE PATTERNS
+    upscale = [];
+    upscale{4} = []; % 1536 to 6144
+    upscale{3} = [1,1,1,1;...
+                  2,2,2,2]; % 384 to 1536
+    upscale{2} = []; % 96 to 384
+    
 %%  LOADING DATA
 %   Using info.txt and init.txt files just created
     fileID = fopen('info.txt','r');
@@ -73,17 +73,14 @@
     end
     
 %%  INITILIZING SQL CONNECTION AND VARIABLE NAMES    
-    sql_info = {info{1,2}{3:5}}; % {usr, pwd, db}
+    sql_info = {info{1,2}{2:4}}; % {usr, pwd, db}
     conn = connSQL(sql_info);
     
-    expt_name = info{1,2}{6};
-    
-    tablename_p2id  = info{1,2}{11};
-    tablename_p2c   = info{1,2}{7};
-    tablename_s2o   = info{1,2}{13};
-    tablename_p2o   = info{1,2}{12};
-    tablename_bpos  = info{1,2}{14};
-    tablename_sbox  = info{1,2}{15};
+    tablename_p2id  = info{1,2}{6};
+    tablename_p2c   = info{1,2}{5};
+    tablename_s2o   = info{1,2}{8};
+    tablename_p2o   = info{1,2}{7};
+    tablename_bpos  = info{1,2}{9};
     
     colnames_p2id   = {'pos','strain_id'};
     colnames_p2c    = {'pos','density','plate','row','col'};
@@ -128,15 +125,8 @@
         end
     end
     
-%%  UPSCALE PATTERN
-%%
-%   EDIT THIS PER EXPERIMENT
-    upscale = [];
-    upscale{4} = [];
-    upscale{3} = [1,1,1,1;...
-                  2,2,2,2];
-    upscale{2} = [];
-%%
+%%  GENERARTING POS2COOR and POS2STRAINID TABLES
+
     strain = [];
     tbl_p2c = [];
     tbl_p2s = [];
@@ -331,24 +321,6 @@
         else
             
         end
-    end
-    
-%%  SMUDGE_BOX
-
-%   [density, plate, row, col ; density, plate, row, col ;...; density, plate, row, col]
-    sbox = [1536,1,1,1;1536,2,3,4;1536,2,10,10];
-    
-    exec(conn, sprintf('drop table %s',tablename_sbox));
-    exec(conn, sprintf(['create table %s ',...
-        '(pos int not null)'],tablename_sbox));
-    
-    for i = 1:size(sbox,1)
-        exec(conn, sprintf(['insert into %s ',...
-            'select pos from %s ',...
-            'where density = %d ',...
-            'and plate = %d and row = %d and col = %d'],...
-            tablename_sbox, tablename_p2c,...
-            sbox(i,:)));
     end
 
 %%  END

@@ -22,14 +22,17 @@
     fileID = fopen('info.txt','r');
     info = textscan(fileID, '%s%s');
 
-%%  Initialization
+%%  INITIALIZATION (EDIT THIS SECTION)
     
-    % change this to indicate the image directory
-    file_dir = '/home/sbp29/RAW_Data/Branden/multipin_pilot/problem_imgs/';
+    file_dir = '/Users/saur1n/Desktop/problem_imgs/test'; % directory location for where the images are
+    expt_set = 'TEST_SET1';
+    density = 384; % colony density
+    
+%%  GETTING IMAGE FILES
     
     hours = []; 
     files = {};
-    filedir = dir(info{1,2}{1});
+    filedir = dir(file_dir);
     dirFlags = [filedir.isdir] & ~strcmp({filedir.name},'.') & ~strcmp({filedir.name},'..');
     subFolders = filedir(dirFlags);
     for k = 1 : length(subFolders)
@@ -71,8 +74,6 @@
     end
     
 %%  PLATE DENSITY AND ANALYSIS PARAMETERS
-
-    density = 384; % EDIT THIS ACCORDING TO IMAGES
     
     if density == 6144
         dimensions = [64 96];
@@ -177,7 +178,7 @@
     cs_mean = [];
     tmp = cs';
 
-    if info{1,2}{3} == 3
+    if info{1,2}{1} == 3
         for ii = 1:3:length(files)
             cs_mean = [cs_mean, mean(tmp(:,ii:ii+2),2)];
         end
@@ -194,7 +195,7 @@
     tmp = [];
     i = 1;
     
-    if info{1,2}{3} == 3
+    if info{1,2}{1} == 3
         for ii = 1:3:size(cs,1)
             tmp = [cs(ii,:); cs(ii+1,:); cs(ii+2,:);...
                 cs_mean(i,:)];
@@ -212,13 +213,12 @@
 
 %%  Upload RAW Colony Size Data to SQL
 
-    sql_info = {info{1,2}{3:5}}; % {usr, pwd, db}
+    sql_info = {info{1,2}{2:4}}; % {usr, pwd, db}
     conn = connSQL(sql_info);
     
-    expt_name = info{1,2}{6};
-    tablename_raw  = sprintf('%s_%d_RAW',expt_name,density);
+    tablename_raw  = sprintf('%s_%d_RAW',expt_set,density);
         
-    p2c_info = {info{1,2}{7:10}};
+    p2c_info = {info{1,2}{5},'plate','row','col'};
     p2c = fetch(conn, sprintf(['select * from %s a ',...
         'where density = %d ',...
         'order by a.%s, a.%s, a.%s'],...
@@ -227,8 +227,8 @@
 
     exec(conn, sprintf('drop table %s',tablename_raw));  
     exec(conn, sprintf(['create table %s (pos int not null, hours double not null,'...
-        'replicate1 int default null, replicate2 int default null, ',...
-        'replicate3 int default null, average double default null)'], tablename_raw));
+        'replicate1 double default null, replicate2 double default null, ',...
+        'replicate3 double default null, average double default null)'], tablename_raw));
 
     colnames_raw = {'pos','hours'...
         'replicate1','replicate2','replicate3',...
@@ -244,12 +244,31 @@
     datainsert(conn,tablename_raw,colnames_raw,data);
     toc
     
+%%  SMUDGE_BOX
+
+    tablename_sbox  = sprintf('%s_smudgebox', expt_set);
+    
+%   [density, plate, row, col ; density, plate, row, col ;...; density, plate, row, col]
+    sbox = [1536,1,1,1;1536,2,3,4;1536,2,10,10];
+    
+    exec(conn, sprintf('drop table %s',tablename_sbox));
+    exec(conn, sprintf(['create table %s ',...
+        '(pos int not null)'],tablename_sbox));
+    
+    for i = 1:size(sbox,1)
+        exec(conn, sprintf(['insert into %s ',...
+            'select pos from %s ',...
+            'where density = %d ',...
+            'and plate = %d and row = %d and col = %d'],...
+            tablename_sbox, p2c_info{1},...
+            sbox(i,:)));
+    end
+    
 %%  SPATIAL cleanup
 %   Border colonies, light artefact and smudge correction
 
-    tablename_jpeg  = sprintf('%s_%d_JPEG',expt_name,density);
-    tablename_bpos  = info{1,2}{14};
-    tablename_sbox  = info{1,2}{15};
+    tablename_jpeg  = sprintf('%s_%d_JPEG',expt_set,density);
+    tablename_bpos  = info{1,2}{9};
 
     exec(conn, sprintf('drop table %s',tablename_jpeg));
     exec(conn, sprintf(['create table %s ',...
