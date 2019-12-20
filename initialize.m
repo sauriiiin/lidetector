@@ -20,13 +20,13 @@
 
     image_plate     = 1;
     usr             = 'sbp29';
-    pwd             = '';
+    pwd             = 'Ku5hani@28';
     db              = 'saurin_test';
-    p2c_tblname     = 'TEST_pos2coor';
-    p2s_tblname     = 'TEST_pos2strainid';
-    p2o_tblname     = 'TEST_pos2orf_name';
-    s2o_tblname     = 'TEST_strainid2orf_name';
-    bpos_tblname    = 'TEST_borderpos';
+    p2c_tblname     = '4C4_pos2coor';
+    p2s_tblname     = '4C4_pos2strainid';
+    p2o_tblname     = '4C4_pos2orf_name';
+    s2o_tblname     = '4C4_strainid2orf_name';
+    bpos_tblname    = '4C4_borderpos';
     cont_name       = 'BF_control';
     
     info = [{'image/plate';'usr';'pwd';'db';...
@@ -41,9 +41,9 @@
     
 %   Maximum number of Plates/Density at any stage of the experiment
     N_96    = 0;
-    N_384   = 2;
-    N_1536  = 2;
-    N_6144  = 0;
+    N_384   = 4;
+    N_1536  = 4;
+    N_6144  = 4;
     
     init = [{'96';'384';'1536';'6144'},...
         {N_96; N_384; N_1536; N_6144}];
@@ -53,10 +53,15 @@
     
 %   UPSCALE PATTERNS
     upscale = [];
-    upscale{4} = []; % 1536 to 6144
-    upscale{3} = [1,1,1,1;...
-                  2,2,2,2]; % 384 to 1536
-    upscale{2} = []; % 96 to 384
+    upscale{4} = [1,2,3,4;...
+        4,1,2,3;...
+        3,4,1,2;...
+        2,3,4,1]; % how was 6144 made
+    upscale{3} = [1,2,3,4;...
+        4,1,2,3;...
+        3,4,1,2;...
+        2,3,4,1]; % how was 1536 made
+    upscale{2} = []; % how was 384 made
     
 %%  LOADING DATA
 %   Using info.txt and init.txt files just created
@@ -130,6 +135,8 @@
     strain = [];
     tbl_p2c = [];
     tbl_p2s = [];
+
+%     find(cellfun(@isempty,upscale))
     
     for up = 1:4
         if iden == 96
@@ -274,7 +281,7 @@
 
     exec(conn, sprintf('drop table %s',tablename_s2o)); 
     exec(conn, sprintf(['create table %s ',...
-        '(strain_id int not null, orf_name varchar(20) not null)'],tablename_s2o));
+        '(strain_id int not null, orf_name varchar(20) null)'],tablename_s2o));
     
     datainsert(conn,tablename_s2o,colnames_s2o,tbl_s2o);
     

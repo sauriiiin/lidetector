@@ -24,8 +24,8 @@
 
 %%  INITIALIZATION (EDIT THIS SECTION)
     
-    file_dir = '/Users/saur1n/Desktop/problem_imgs/test'; % directory location for where the images are
-    expt_set = 'TEST_SET1';
+    file_dir = '/Users/saur1n/Desktop/problem_imgs'; % directory location for where the images are
+    expt_set = '4C4_WC';
     density = 384; % colony density
     
 %%  GETTING IMAGE FILES
