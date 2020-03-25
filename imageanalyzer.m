@@ -24,8 +24,8 @@
 
 %%  INITIALIZATION (EDIT THIS SECTION)
     
-    file_dir = '/Users/saur1n/Desktop/problem_imgs'; % directory location for where the images are
-    expt_set = '4C4_WC';
+    file_dir = '/home/sbp29/RAW_Data/OESP/OES_Pilot2/02_SP'; % directory location for where the images are
+    expt_set = 'OESP2_SP';
     density = 384; % colony density
     
 %%  GETTING IMAGE FILES
@@ -49,29 +49,36 @@
 %%  PIXEL COUNT CORRECTION IF FOCAL LENGTH FOR ALL IMAGES IS NOT THE SAME
 %   Divide pix count with pix_cor value for the plate in order to correct
 %   for the focal length
-
-    pix_cor = [55,1;54,1.02771070000000;53,1.05542140000000;52,1.08313210000000;...
-        51,1.11084280000000;50,1.16399474700000;49,1.21714669400000;...
-        48,1.26852041700000;47,1.31989414100000;46,1.37126786400000;...
-        45,1.39150770600000;44,1.50909135300000;43,1.62667499900000;...
-        42,1.68744457600000;41,1.79371474700000;40,1.89399660000000;...
-        39,2.00545600000000;38,2.05122191100000;37,2.09698782200000;...
-        36,2.24259310800000;35,2.27525516200000;34,2.61089798700000;...
-        33,2.70344852800000;32,2.91500635400000;31,3.04622703700000;...
-        30,3.17744772000000;29,3.46102065700000;28,3.78798182200000;...
-        27,4.08786873800000;26,4.30061327400000;25,4.51335780900000;...
-        24,5.04265185000000;23,5.67768396500000;22,6.01741860700000;...
-        21,6.35715324900000;20,6.92600201900000;19,7.54727851600000;...
-        18,8.16855501300000];
-    
-    multplr = [];
-%     dimen = [];
-    for i = 1:length(files)
-       img_info = imfinfo(files{i});
-       fl = img_info.DigitalCamera.FocalLength;
-       multplr = [multplr; pix_cor(pix_cor(:,1) == fl,2)];
-%         dimen = [dimen; [img_info.Height, img_info.Width]];
-    end
+% 
+%     pix_cor = [55,1;54,1.02771070000000;53,1.05542140000000;52,1.08313210000000;...
+%         51,1.11084280000000;50,1.16399474700000;49,1.21714669400000;...
+%         48,1.26852041700000;47,1.31989414100000;46,1.37126786400000;...
+%         45,1.39150770600000;44,1.50909135300000;43,1.62667499900000;...
+%         42,1.68744457600000;41,1.79371474700000;40,1.89399660000000;...
+%         39,2.00545600000000;38,2.05122191100000;37,2.09698782200000;...
+%         36,2.24259310800000;35,2.27525516200000;34,2.61089798700000;...
+%         33,2.70344852800000;32,2.91500635400000;31,3.04622703700000;...
+%         30,3.17744772000000;29,3.46102065700000;28,3.78798182200000;...
+%         27,4.08786873800000;26,4.30061327400000;25,4.51335780900000;...
+%         24,5.04265185000000;23,5.67768396500000;22,6.01741860700000;...
+%         21,6.35715324900000;20,6.92600201900000;19,7.54727851600000;...
+%         18,8.16855501300000];
+%     
+%     multplr = [];
+%     time = [];
+%     for i = 1:length(files)
+%        img_info = imfinfo(files{i});
+%        fl = img_info.DigitalCamera.FocalLength;
+%        multplr = [multplr; pix_cor(pix_cor(:,1) == fl,2)];
+%        time = [time; str2double(strrep(img_info.DateTime(end-7:end-3),':','.'))];
+%     end
+%     
+%     time = round(mean(reshape(time, [4, 12])),2);
+%     time = time - time(1);
+%     
+%     if ~isempty(time)
+%         hours = time;
+%     end
     
 %%  PLATE DENSITY AND ANALYSIS PARAMETERS
     
@@ -107,14 +114,14 @@
 %%  Manually fix images #1
 
 %     pos = 1:length(files);
-%     for ii = 1 : length(pos)
-%         tic;
-%         analyze_image( files{pos(ii)}, params{:}, ...
-%             'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
-%         toc;
-%     end
+    for ii = 1 : length(pos)
+        tic;
+        analyze_image( files{pos(ii)}, params{:}, ...
+            'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
+        toc;
+    end
 
-% %%  Find Low Correlation Images
+%%  Find Low Correlation Images
 % 
 %     tmp = strfind(files, '/');
 %     threshold = 0.99;
@@ -133,7 +140,7 @@
 %         end
 %     end
 % 
-% %%  Manually fix images #2
+%%  Manually fix images #2
 % 
 %     for ii = 1 : size(pos,2)
 %         analyze_image(files{pos(ii)}, params{:}, ...
@@ -150,28 +157,36 @@
 %     end
 % 
 % 
-% %%  View Analyzed Images
-% 
-%     pos = [];
-%     for ii = 1:length(files)
-%         view_plate_image(files{ii},'applyThreshold', true)
-%         switch questdlg('Was the Binary Image look fine?',...
-%             'Binary Image',...
-%             'Yes','No','Yes')
-%             case 'No'
-%                 pos = [pos, ii];
-%         end
-%     end
+%%  View Analyzed Images
+
+    pos = [];
+    for ii = 1:length(files)
+        view_plate_image(files{ii},'applyThreshold', true)
+        switch questdlg('Was the Binary Image look fine?',...
+            'Binary Image',...
+            'Yes','No','Yes')
+            case 'No'
+                pos = [pos, ii];
+        end
+    end
+    
+    for ii = 1 : length(pos)
+        tic;
+        analyze_image( files{pos(ii)}, params{:}, ...
+            'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
+        toc;
+    end
+
     
 %%  Load Colony Size Data
 
     cs = load_colony_sizes(files);
-%     size(cs)    % should be = (number of plates x 3 x number of time points) x density
-
-%   zoom level corrector of pixel counts    
-    if ~isempty(multplr)
-        cs = cs.*multplr;
-    end
+% %     size(cs)    % should be = (number of plates x 3 x number of time points) x density
+% 
+% %   zoom level corrector of pixel counts    
+%     if ~isempty(multplr)
+%         cs = cs.*multplr;
+%     end
 
 %%  Mean Colony Size For Each Plate
 
@@ -249,7 +264,7 @@
     tablename_sbox  = sprintf('%s_smudgebox', expt_set);
     
 %   [density, plate, row, col ; density, plate, row, col ;...; density, plate, row, col]
-    sbox = [1536,1,1,1;1536,2,3,4;1536,2,10,10];
+    sbox = [];
     
     exec(conn, sprintf('drop table %s',tablename_sbox));
     exec(conn, sprintf(['create table %s ',...
@@ -285,11 +300,11 @@
         'replicate3 = NULL, average = NULL ',...
         'where average <= 10'],tablename_jpeg));
 
-    exec(conn, sprintf(['update %s ',...
-        'set replicate1 = NULL, replicate2 = NULL, ',...
-        'replicate3 = NULL, average = NULL ',...
-        'where pos in ',...
-        '(select pos from %s)'],tablename_jpeg,tablename_sbox));
+%     exec(conn, sprintf(['update %s ',...
+%         'set replicate1 = NULL, replicate2 = NULL, ',...
+%         'replicate3 = NULL, average = NULL ',...
+%         'where pos in ',...
+%         '(select pos from %s)'],tablename_jpeg,tablename_sbox));
 
 %%  END
     close(conn)
