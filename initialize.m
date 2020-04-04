@@ -20,7 +20,7 @@
 
     image_plate     = 1;
     usr             = 'sbp29';
-    pwd             = 'Ku5hani@28';
+    pwd             = '******';
     db              = 'saurin_test';
     p2c_tblname     = 'OESP1_pos2coor';
     p2s_tblname     = 'OESP1_pos2strainid';
