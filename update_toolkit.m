@@ -15,6 +15,12 @@ function update_toolkit(path)
     if exist(sprintf('%s/sau-matlab-toolkit-master', path), 'dir') == 7
         rmdir(sprintf('%s/sau-matlab-toolkit-master', path),'s')
     end
+    
+    if exist(sprintf('%s/Matlab-Colony--Analyzer-Toolkit', path), 'dir') ~= 7
+        url_mcat = 'https://github.com/sauriiiin/Matlab-Colony-Analyzer-Toolkit/archive/master.zip';
+        zip_mcat = urlwrite(url_mcat, sprintf('%s/mcat.zip',path));
+        unzip(zip_mcat, path)
+    end
 
     url_lid = 'https://github.com/sauriiiin/lidetector/archive/master.zip';
     url_smt = 'https://github.com/sauriiiin/sau-matlab-toolkit/archive/master.zip';
@@ -28,6 +34,5 @@ function update_toolkit(path)
     delete(sprintf('%s/lid.zip',path));
     delete(sprintf('%s/smt.zip',path));
 
-    fprintf('Files Updated\n');
-        
+    fprintf('Files Updated\n');  
 end

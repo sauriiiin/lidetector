@@ -15,18 +15,18 @@
 
 %%  Load Paths to Files and Expt Info
 
-%   open load_toolkit.m and update the paths
-    load_toolkit;
-%   use info.txt in the directory as a example
-%   place your file in the MATLAB directory
-    fileID = fopen('info.txt','r');
-    info = textscan(fileID, '%s%s');
+% %   open load_toolkit.m and update the paths
+%     load_toolkit;
+% %   use info.txt in the directory as a example
+% %   place your file in the MATLAB directory
+%     fileID = fopen('info.txt','r');
+%     info = textscan(fileID, '%s%s');
 
 %%  INITIALIZATION (EDIT THIS SECTION)
     
-    file_dir = '/home/sbp29/RAW_Data/OESP/OES_Pilot2/02_SP'; % directory location for where the images are
-    expt_set = 'OESP2_SP';
-    density = 384; % colony density
+    file_dir = '/home/sbp29/RAW_Data/YBRs/exp3/FS1_redo/J2'; % directory location for where the images are
+    expt_set = 'YBRs3_R_J2';
+    density = 1536; % colony density
     
 %%  GETTING IMAGE FILES
     
@@ -101,6 +101,14 @@
 %%  Image Analysis
 
     analyze_directory_of_images(files, params{:} );
+    
+%     pos = 1:length(files);
+%     for ii = 1 : length(pos)
+%         tic;
+%         analyze_image( files{pos(ii)}, params{:}, ...
+%             'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
+%         toc;
+%     end
 
 %%  All images with no grid
 %   Those images that weren't analyzed correctly
@@ -193,7 +201,7 @@
     cs_mean = [];
     tmp = cs';
 
-    if info{1,2}{1} == 3
+    if info{1,2}{1} == '3'
         for ii = 1:3:length(files)
             cs_mean = [cs_mean, mean(tmp(:,ii:ii+2),2)];
         end
@@ -210,7 +218,7 @@
     tmp = [];
     i = 1;
     
-    if info{1,2}{1} == 3
+    if info{1,2}{1} == '3'
         for ii = 1:3:size(cs,1)
             tmp = [cs(ii,:); cs(ii+1,:); cs(ii+2,:);...
                 cs_mean(i,:)];
@@ -261,23 +269,52 @@
     
 %%  SMUDGE_BOX
 
-    tablename_sbox  = sprintf('%s_smudgebox', expt_set);
-    
-%   [density, plate, row, col ; density, plate, row, col ;...; density, plate, row, col]
-    sbox = [];
-    
-    exec(conn, sprintf('drop table %s',tablename_sbox));
-    exec(conn, sprintf(['create table %s ',...
-        '(pos int not null)'],tablename_sbox));
-    
-    for i = 1:size(sbox,1)
-        exec(conn, sprintf(['insert into %s ',...
-            'select pos from %s ',...
-            'where density = %d ',...
-            'and plate = %d and row = %d and col = %d'],...
-            tablename_sbox, p2c_info{1},...
-            sbox(i,:)));
-    end
+%     tablename_sbox  = sprintf('%s_smudgebox', expt_set);
+%     
+% %   [density, plate, row, col ; density, plate, row, col ;...; density, plate, row, col]
+%     sbox = [6144,1,43,50;
+%         6144,1,44,50;
+%         6144,1,45,50;
+%         6144,1,43,51;
+%         6144,1,44,51;
+%         6144,1,45,51;
+%         6144,1,43,52;
+%         6144,1,44,52;
+%         6144,1,45,52;
+%         6144,1,43,53;
+%         6144,1,44,53;
+%         6144,1,45,53;
+%         6144,1,43,54;
+%         6144,1,44,54;
+%         6144,1,45,54;
+%         6144,1,43,55;
+%         6144,1,44,55;
+%         6144,1,45,55;
+%         6144,1,43,56;
+%         6144,1,44,56;
+%         6144,1,45,56;
+%         6144,1,43,57;
+%         6144,1,44,57;
+%         6144,1,45,57;
+%         6144,1,43,58;
+%         6144,1,44,58;
+%         6144,1,45,58;
+%         6144,1,43,59;
+%         6144,1,44,59;
+%         6144,1,45,59];
+%     
+%     exec(conn, sprintf('drop table %s',tablename_sbox));
+%     exec(conn, sprintf(['create table %s ',...
+%         '(pos int not null)'],tablename_sbox));
+%     
+%     for i = 1:size(sbox,1)
+%         exec(conn, sprintf(['insert into %s ',...
+%             'select pos from %s ',...
+%             'where density = %d ',...
+%             'and plate = %d and row = %d and col = %d'],...
+%             tablename_sbox, p2c_info{1},...
+%             sbox(i,:)));
+%     end
     
 %%  SPATIAL cleanup
 %   Border colonies, light artefact and smudge correction
@@ -307,5 +344,5 @@
 %         '(select pos from %s)'],tablename_jpeg,tablename_sbox));
 
 %%  END
-    close(conn)
+%     close(conn)
 %%

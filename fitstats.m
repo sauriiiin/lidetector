@@ -20,8 +20,8 @@
         
         for iii=1:length(hrs.hours)
             clear fit_dat;
-            fit_dat = fetch(conn, sprintf(['select a.orf_name, ',...
-                'a.hours, a.fitness ',...
+            fit_dat = fetch(conn, sprintf(['select a.strain_id, a.orf_name, ',...
+                'a.hours, a.fitness, a.average ',...
                 'from %s a ',...
                 'where a.hours = %0.2f ',...
                 'and a.fitness is not NULL ',...
@@ -33,12 +33,19 @@
             for ii = 1 : (size(fit_dat.orf_name, 1))-1
                 if(strcmpi(fit_dat.orf_name{ii, 1},fit_dat.orf_name{ii+1, 1})==1)
                     temp(1, inc.t) = fit_dat.fitness(ii, 1);
+%                     temp_pix(1, inc.t) = fit_dat.average(ii, 1);
                     inc.t=inc.t+1;
                     if (ii == size(fit_dat.orf_name, 1)-1)
                         temp(1, inc.t) = fit_dat.fitness(ii+1, 1);
+                        data.strain_id(inc.tt, 1) = fit_dat.strain_id(ii, 1);
                         data.orf_name{inc.tt, 1} = fit_dat.orf_name{ii, 1};
                         data.hours(inc.tt, 1) = fit_dat.hours(ii, 1);
                         data.N(inc.tt, 1) = length(temp(~isoutlier(temp)));
+                        
+%                         data.pix_mean(inc.tt, 1) = nanmean(temp_pix);
+%                         data.pix_median(inc.tt, 1) = nanmedian(temp_pix);
+%                         data.pix_std(inc.tt, 1) = nanstd(temp_pix);
+                        
                         data.cs_mean(inc.tt, 1) = nanmean(temp(~isoutlier(temp)));
                         data.cs_median(inc.tt, 1) = nanmedian(temp(~isoutlier(temp)));
                         data.cs_std(inc.tt, 1) = nanstd(temp(~isoutlier(temp)));
@@ -46,13 +53,22 @@
                     end
                 else
                     temp(1, inc.t) = fit_dat.fitness(ii, 1);
+%                     temp_pix(1, inc.t) = fit_dat.average(ii, 1);
+                    
+                    data.strain_id(inc.tt, 1) = fit_dat.strain_id(ii, 1);
                     data.orf_name{inc.tt, 1} = fit_dat.orf_name{ii, 1};
                     data.hours(inc.tt, 1) = fit_dat.hours(ii, 1);
                     data.N(inc.tt, 1) = length(temp(~isoutlier(temp)));
+                    
+%                     data.pix_mean(inc.tt, 1) = nanmean(temp_pix);
+%                     data.pix_median(inc.tt, 1) = nanmedian(temp_pix);
+%                     data.pix_std(inc.tt, 1) = nanstd(temp_pix);
+                    
                     data.cs_mean(inc.tt, 1) = nanmean(temp(~isoutlier(temp)));
                     data.cs_median(inc.tt, 1) = nanmedian(temp(~isoutlier(temp)));
                     data.cs_std(inc.tt, 1) = nanstd(temp(~isoutlier(temp)));
                     clear temp;
+                    clear temp_pix;
                     inc.t=1;
                     inc.tt=inc.tt+1;
                 end

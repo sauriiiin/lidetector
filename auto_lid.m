@@ -1,8 +1,8 @@
 %%  Sau MATLAB Colony Analyzer Toolkit
 %
-%%  lid.m
+%%  lid_t.m
 %
-%   Author: Saurin Parikh, August 2019
+%   Author: Saurin Parikh, August 2020
 %   dr.saurin.parikh@gmail.com
 %   
 %   Final version of the LI Detector Pipeline
@@ -16,8 +16,9 @@
 %   Provides option to work with .csv rather than SQL
 
 %%  Load Paths to Files and Expt Info
-    
+
 %   open load_toolkit.m and update the paths
+    cd /home/sbp29/MATLAB
     load_toolkit;
 %   use info.txt in the directory as a example
 %   place your file in the MATLAB directory
@@ -25,19 +26,16 @@
     info = textscan(fileID, '%s%s');
 
 %%  INITIALIZATION
-
-% %   Set preferences with setdbprefs.
-%     setdbprefs('DataReturnFormat', 'structure');
-%     setdbprefs({'NullStringRead';'NullStringWrite';'NullNumberRead';'NullNumberWrite'},...
-%                   {'null';'null';'NaN';'NaN'})
     
 %   MySQL Connection
     sql_info = {info{1,2}{2:4}}; % {usr, pwd, db}
     conn = connSQL(sql_info);
-
-%   EXPT Name, Density and Tables
-    expt_name = '4C4_TR_RND2'; % EDIT THIS ACCORDING TO THE EXPT
-    density = 6144; % EDIT THIS ACCORDING TO IMAGES
+    
+    expt_set = input('Name of Experiment Arm: ','s');
+    density = input('Colony-density of plates: ');
+    
+    cont.name = info{1,2}{10};
+    
 %%   
     if density == 6144
         dimensions = [64 96];
@@ -49,61 +47,52 @@
         dimensions = [8 12];
     end
       
-    tablename_jpeg      = sprintf('%s_%d_JPEG',expt_name,density);
-    tablename_norm      = sprintf('%s_%d_NORM',expt_name,density);
-    tablename_fit       = sprintf('%s_%d_FITNESS',expt_name,density);
-    tablename_fits      = sprintf('%s_%d_FITNESS_STATS',expt_name,density);
-    tablename_es        = sprintf('%s_%d_FITNESS_ES',expt_name,density);
-    tablename_pval      = sprintf('%s_%d_PVALUE',expt_name,density);
-    tablename_res       = sprintf('%s_%d_RES',expt_name,density);
+    tablename_jpeg      = sprintf('%s_%d_JPEG',expt_set,density);
+    tablename_norm      = sprintf('%s_%d_NORM',expt_set,density);
+    tablename_fit       = sprintf('%s_%d_FITNESS',expt_set,density);
+    tablename_fits      = sprintf('%s_%d_FITNESS_STATS',expt_set,density);
+    tablename_es        = sprintf('%s_%d_FITNESS_ES',expt_set,density);
+    tablename_pval      = sprintf('%s_%d_PVALUE',expt_set,density);
+    tablename_res       = sprintf('%s_%d_RES',expt_set,density);
     
     tablename_p2s  = info{1,2}{6};
-%     tablename_p2o  = info{1,2}{7};
-    tablename_p2o = '4C4_TR_pos2orf_name';
+    tablename_p2o  = info{1,2}{7};
     tablename_bpos = info{1,2}{9};
+    
+    tablename_p2p   = info{1,2}{11};
     
     p2c_info = {info{1,2}{5},'plate','row','col'};
     p2c = fetch(conn, sprintf(['select * from %s a ',...
         'where density = %d ',...
         'order by a.%s, a.%s, a.%s'],...
         p2c_info{1},density,p2c_info{2},p2c_info{4},p2c_info{3}));
-%     p2c.Properties.VariableNames = {'pos','density','plate','row','col'};
     
     n_plates = fetch(conn, sprintf(['select distinct %s from %s ',...
         'where density = %d ',...
         'order by %s asc'],...
         p2c_info{2},p2c_info{1},density,p2c_info{2}));
     
-%     if density >384
-%         prompt={'Enter the name of your source table:'};
-%         tablename_null = char(inputdlg(prompt,...
-%             'Source Table',1,...
-%             {'expt_384_SPATIAL'}));
-%         source_nulls = fetch(conn, sprintf(['select a.pos from %s a ',...
-%             'where a.csS is NULL ',...
-%             'order by a.pos asc'],tablename_null));
-%     end
-  
-%%  CONTROL STRAIN NAME
-    cont.name = info{1,2}{10};
-
 %%  JPEG COMPETITION CORRECTION
+    if input('Do you want to use local artifact correction? [Y/N] ', 's') == 'Y'
+    %     jpeg_data = fetch(conn, sprintf(['select a.*, b.orf_name, c.%s, c.%s, c.%s '...
+    %         'from %s a, %s b, %s c '...
+    %         'where a.pos = b.pos and a.pos = c.pos '...
+    %         'order by a.hours, c.%s, c.%s, c.%s'],...
+    %         p2c_info(2,:), p2c_info(4,:), p2c_info(3,:),...
+    %         tablename_jpeg, tablename_p2o, p2c_info(1,:),...
+    %         p2c_info(2,:), p2c_info(3,:), p2c_info(4,:)));
+    %     jpeg_data.Properties.VariableNames = {'pos','hours','replicate1','replicate2','replicate3','average',...
+    %         'orf_name','plate','row','col'};
+    end
     
-%     jpeg_data = fetch(conn, sprintf(['select a.*, b.orf_name, c.%s, c.%s, c.%s '...
-%         'from %s a, %s b, %s c '...
-%         'where a.pos = b.pos and a.pos = c.pos '...
-%         'order by a.hours, c.%s, c.%s, c.%s'],...
-%         p2c_info(2,:), p2c_info(4,:), p2c_info(3,:),...
-%         tablename_jpeg, tablename_p2o, p2c_info(1,:),...
-%         p2c_info(2,:), p2c_info(3,:), p2c_info(4,:)));
-%     jpeg_data.Properties.VariableNames = {'pos','hours','replicate1','replicate2','replicate3','average',...
-%         'orf_name','plate','row','col'};
-    
-
-%%  Upload JPEG to NORM data
+%%  SPATIAL BIAS CORRECTION
 %   Linear Interpolation based CN
 
-    IL = 1; % 1 = to interleave / 0 = to not
+    if input('Do you want to perform source-normalization? [Y/N] ', 's') == 'Y'
+        IL = 1; % 1 = to source norm / 0 = to not
+    else
+        IL = 0;
+    end
 
     hours = fetch(conn, sprintf(['select distinct hours from %s ',...
         'order by hours asc'], tablename_jpeg));
@@ -132,7 +121,7 @@
         'where a.pos = b.pos and b.pos = c.pos ',...
         'order by a.hours, a.pos asc)'],...
         tablename_fit,tablename_norm,tablename_p2o,tablename_p2s));
-
+    
 %%  FITNESS STATS
 
     clear data
@@ -145,14 +134,13 @@
 
     colnames_fits = {'strain_id','orf_name','hours','N','cs_mean','cs_median','cs_std'};
     
-%     stat_data = fitstats_sid(tablename_fit,sql_info);
-    stat_data = fitstats(tablename_fit,sql_info);
+    stat_data = fitstats_sid(tablename_fit,sql_info);
     
     tic
     datainsert(conn,tablename_fits,colnames_fits,stat_data)
 %     sqlwrite(conn,tablename_fits,struct2table(stat_data));
-    toc
-  
+    toc  
+    
 %%  FITNESS STATS to EMPIRICAL P VALUES
 
     exec(conn, sprintf('drop table %s',tablename_pval));
@@ -162,32 +150,21 @@
         'es double null)'],tablename_pval));
     colnames_pval = {'strain_id','orf_name','hours','p','stat','es'};
 
-    contpos = fetch(conn, sprintf(['select pos from %s ',...
-        'where orf_name = ''%s'' and pos < 100000 ',...
-        'and pos not in ',...
-        '(select pos from %s)'],...
-        tablename_p2o,cont.name,tablename_bpos));
+    contpos = fetch(conn, sprintf(['select a.pos, a.rep_pos ',...
+        'from %s a, %s b ',...
+        'where a.density = %d and a.pos = b.pos and b.orf_name = "%s" ',...
+        'and a.pos not in (select pos from %s) ',...
+        'order by a.pos'],...
+        tablename_p2p, tablename_p2o,...
+        density, cont.name,...
+        tablename_bpos));
     
-    if density == 1536
-        contpos = contpos.pos + [100000,200000,300000,400000,...
-            500000,600000,700000,800000];
-    elseif density == 6144
-%         contpos = contpos.pos + [100000,200000,300000,400000,...
-%             500000,600000,700000,800000];
-%         contpos = [contpos + 1000000, contpos + 2000000, contpos + 3000000, contpos + 4000000,...
-%             contpos + 5000000, contpos + 6000000, contpos + 7000000, contpos + 8000000];
-        contpos = contpos.pos + [110000,120000,130000,140000,...
-            210000,220000,230000,240000,...
-            310000,320000,330000,340000,...
-            410000,420000,430000,440000];
-%         contpos = contpos.pos + [110000,120000,130000,140000,...
-%             210000,220000,230000,240000];
-    end
-
+    iden_contpos = unique(contpos.pos);
+    
     for iii = 1:length(hours)
         contfit = [];
-        for ii = 1:length(contpos)
-            cp = sprintf('%d,',contpos(ii,:));
+        for ii = 1:length(iden_contpos)
+            cp = sprintf('%d,',contpos.rep_pos(contpos.pos == iden_contpos(ii)));
             temp = fetch(conn, sprintf(['select fitness from %s ',...
                 'where hours = %0.2f and pos in (%s) ',...
                 'and fitness is not null'],tablename_fit,hours(iii),...
@@ -213,8 +190,7 @@
         pvals = [];
         es = [];
         stat = [];
-%         for i = 1:length(orffit.strain_id)
-        for i = 1:length(orffit.orf_name)
+        for i = 1:length(orffit.strain_id)
             if sum(m<orffit.cs_mean(i)) < tt/2
                 if m<orffit.cs_mean(i) == 0
                     pvals = [pvals; 1/tt];
@@ -246,4 +222,5 @@
     end
         
 %%  END
-    
+    close(conn)
+%%

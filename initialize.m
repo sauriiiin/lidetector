@@ -18,15 +18,15 @@
 %%  EXPERIMENTAL DESIGN AND INFORMATION
 %   Fill this information before going forward
 
-    image_plate     = 1;
-    usr             = 'sbp29';
-    pwd             = '******';
-    db              = 'saurin_test';
-    p2c_tblname     = 'OESP1_pos2coor';
-    p2s_tblname     = 'OESP1_pos2strainid';
-    p2o_tblname     = 'OESP1_pos2orf_name';
-    s2o_tblname     = 'OESP1_strainid2orf_name';
-    bpos_tblname    = 'OESP1_borderpos';
+    images_per_plate = 3;
+    username         = 'sbp29';
+    password         = 'Ku5hani@28';
+    database         = 'saurin_test';
+    p2c_tblname     = '4C4_pos2coor';
+    p2s_tblname     = '4C4_pos2strainid';
+    p2o_tblname     = '4C4_pos2orf_name';
+    s2o_tblname     = '4C4_strainid2orf_name';
+    bpos_tblname    = '4C4_borderpos';
     cont_name       = 'BF_control';
     
     info = [{'image/plate';'usr';'pwd';'db';...
@@ -40,10 +40,10 @@
         'WriteVariableNames',false)
     
 %   Maximum number of Plates/Density at any stage of the experiment
-    N_96    = 0;
-    N_384   = 8;
-    N_1536  = 8;
-    N_6144  = 8;
+    N_96    = 3;
+    N_384   = 2;
+    N_1536  = 2;
+    N_6144  = 0;
     
     init = [{96;384;1536;6144},...
         {N_96; N_384; N_1536; N_6144}];
@@ -53,23 +53,11 @@
     
 %   UPSCALE PATTERNS
     upscale = [];
-    upscale{4} = [1,2,3,4;...
-        2,3,4,5;...
-        3,4,5,6;...
-        4,5,6,7;...
-        5,6,7,8;...
-        6,7,8,1;...
-        7,8,1,2;...
-        8,1,2,3]; % how was 6144 made
-    upscale{3} = [1,4,7,8;...
-        2,6,4,7;...
-        3,2,8,5;...
-        5,1,3,4;...
-        7,8,1,3;...
-        8,3,2,6;...
-        4,5,6,2;...
-        6,7,5,1]; % how was 1536 made
-    upscale{2} = []; % how was 384 made
+    upscale{4} = []; % how was 6144 made
+    upscale{3} = [1,1,2,2;
+        1,2,2,1]; % how was 1536 made
+    upscale{2} = [1,3,2,1;
+        2,1,3,1]; % how was 384 made
     
 %%  LOADING DATA
 %   Using info.txt and init.txt files just created
@@ -83,7 +71,7 @@
     sql_info = {info{1,2}{2:4}}; % {usr, pwd, db}
     conn = connSQL(sql_info);
     
-    oec_plates = [11,22,23,25,27,28];
+    oec_plates = [];
     ncont = 2;
     
     if ~isempty(oec_plates)
@@ -160,46 +148,50 @@
             for i = 1:init{1,2}(1)
                 strain{1,i} = grid2row(data{i});
                 
-                tbl_p2c{1,i} = [pos{1,i};ones(1,length(pos{1,i}))*length(pos{1,i});coor{1,i}{:}]';
+                tbl_p2c{1,i} = [pos{1,i};
+                    ones(1,length(pos{1,i}))*length(pos{1,i});coor{1,i}{:}]';
                 tbl_p2s{1,i} = [pos{1,i};strain{1,i}]';
             end
             for i = 1:init{1,2}(2)
-                pos{2,i} = grid2row(plategen(pos{1,upscale{2}(i,1)},...
-                    pos{1,upscale{2}(i,2)},...
-                    pos{1,upscale{2}(i,3)},...
-                    pos{1,upscale{2}(i,4)})) + i * 10000;
+                pos{2,i} = grid2row(plategen(pos{1,upscale{2}(i,1)} + 1000,...
+                    pos{1,upscale{2}(i,2)} + 2000,...
+                    pos{1,upscale{2}(i,3)} + 3000,...
+                    pos{1,upscale{2}(i,4)} + 4000)) + i * 10000;
                 strain{2,i} = grid2row(plategen(strain{1,upscale{2}(i,1)},...
                     strain{1,upscale{2}(i,2)},...
                     strain{1,upscale{2}(i,3)},...
                     strain{1,upscale{2}(i,4)}));
                 
-                tbl_p2c{2,i} = [pos{2,i};ones(1,length(pos{2,i}))*length(pos{2,i});coor{2,i}{:}]';
+                tbl_p2c{2,i} = [pos{2,i};
+                    ones(1,length(pos{2,i}))*length(pos{2,i});coor{2,i}{:}]';
                 tbl_p2s{2,i} = [pos{2,i};strain{2,i}]';
             end
             for i = 1:init{1,2}(3)
-                pos{3,i} = grid2row(plategen(pos{2,upscale{3}(i,1)},...
-                    pos{2,upscale{3}(i,2)},...
-                    pos{2,upscale{3}(i,3)},...
-                    pos{2,upscale{3}(i,4)})) + i * 100000;
+                pos{3,i} = grid2row(plategen(pos{2,upscale{3}(i,1)} + 100000,...
+                    pos{2,upscale{3}(i,2)} + 200000,...
+                    pos{2,upscale{3}(i,3)} + 300000,...
+                    pos{2,upscale{3}(i,4)} + 400000)) + i * 1000000;
                 strain{3,i} = grid2row(plategen(strain{2,upscale{3}(i,1)},...
                     strain{2,upscale{3}(i,2)},...
                     strain{2,upscale{3}(i,3)},...
                     strain{2,upscale{3}(i,4)}));
                 
-                tbl_p2c{3,i} = [pos{3,i};ones(1,length(pos{3,i}))*length(pos{3,i});coor{3,i}{:}]';
+                tbl_p2c{3,i} = [pos{3,i};
+                    ones(1,length(pos{3,i}))*length(pos{3,i});coor{3,i}{:}]';
                 tbl_p2s{3,i} = [pos{3,i};strain{3,i}]';
             end
             for i = 1:init{1,2}(4)
-                pos{4,i} = grid2row(plategen(pos{3,upscale{4}(i,1)},...
-                    pos{3,upscale{4}(i,2)},...
-                    pos{3,upscale{4}(i,3)},...
-                    pos{3,upscale{4}(i,4)})) + i * 1000000;
+                pos{4,i} = grid2row(plategen(pos{3,upscale{4}(i,1)} + 10000000,...
+                    pos{3,upscale{4}(i,2)} + 20000000,...
+                    pos{3,upscale{4}(i,3)} + 30000000,...
+                    pos{3,upscale{4}(i,4)} + 40000000)) + i * 100000000;
                 strain{4,i} = grid2row(plategen(strain{3,upscale{4}(i,1)},...
                     strain{3,upscale{4}(i,2)},...
                     strain{3,upscale{4}(i,3)},...
                     strain{3,upscale{4}(i,4)}));
                 
-                tbl_p2c{4,i} = [pos{4,i};coor{4,i}{:}]';
+                tbl_p2c{4,i} = [pos{4,i};ones(1,length(pos{4,i}))*length(pos{4,i});
+                    coor{4,i}{:}]';
                 tbl_p2s{4,i} = [pos{4,i};strain{4,i}]';
             end
         elseif iden == 384
@@ -274,7 +266,9 @@
     for i = 1:size(tbl_p2s,1)
         if ~isempty(tbl_p2s{i})
             for ii = 1:size(tbl_p2s,2)
-                datainsert(conn,tablename_p2id,colnames_p2id,tbl_p2s{i,ii});
+                if ~isempty(tbl_p2s{i,ii})
+                    datainsert(conn,tablename_p2id,colnames_p2id,tbl_p2s{i,ii});
+                end
             end
         end
     end
@@ -287,7 +281,9 @@
     for i = 1:size(tbl_p2c,1)
         if ~isempty(tbl_p2c{i})
             for ii = 1:size(tbl_p2c,2)
-                datainsert(conn,tablename_p2c,colnames_p2c,tbl_p2c{i,ii});
+                if ~isempty(tbl_p2c{i,ii})
+                    datainsert(conn,tablename_p2c,colnames_p2c,tbl_p2c{i,ii});
+                end
             end
         end
     end
