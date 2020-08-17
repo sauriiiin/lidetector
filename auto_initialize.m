@@ -13,8 +13,7 @@
 %%  Load Paths to Files
 
 %   open load_toolkit.m and update the paths
-    cd /home/sbp29/MATLAB
-    load_toolkit;
+    loadtoolkit;
 
 %%  EXPERIMENTAL DESIGN AND INFORMATION
 %   Basic information regarding the experiment and data management

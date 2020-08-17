@@ -18,8 +18,7 @@
 %%  Load Paths to Files and Expt Info
 
 %   open load_toolkit.m and update the paths
-    cd /home/sbp29/MATLAB
-    load_toolkit;
+    loadtoolkit;
 %   use info.txt in the directory as a example
 %   place your file in the MATLAB directory
     fileID = fopen('info.txt','r');
