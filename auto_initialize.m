@@ -66,21 +66,21 @@
     if isempty(N_384)
         N_384 = 0;
     elseif N_384 > 0
-        upscale{2} = input('How were they made? [TR,TL,BR,BL; TR,TL,BR,BL;...] ');
+        upscale{2} = input('How were they made? [TL,TR,BL,BR; TL,TR,BL,BR;...] ');
     end
     
     N_1536  = input('Number of 1536-density plates: ');
     if isempty(N_1536)
         N_1536 = 0;
     elseif N_1536 > 0
-        upscale{3} = input('How were they made? [TR,TL,BR,BL; TR,TL,BR,BL;...] ');
+        upscale{3} = input('How were they made? [TL,TR,BL,BR; TL,TR,BL,BR;...] ');
     end
     
     N_6144  = input('Number of 6144-density plates: ');
     if isempty(N_6144)
         N_6144 = 0;
     elseif N_6144 > 0
-        upscale{4} = input('How were they made? [TR,TL,BR,BL; TR,TL,BR,BL;...] ');
+        upscale{4} = input('How were they made? [TL,TR,BL,BR; TL,TR,BL,BR;...] ');
     end
     
     init = [{96;384;1536;6144},...

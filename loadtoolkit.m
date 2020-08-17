@@ -3,7 +3,8 @@
 
     restoredefaultpath;
     
-    matlab_path = input('Path to your MATLAB folder: ', 's');
+    temp = strsplit(matlabpath(), ':');
+    matlab_path = temp{1};
     cd(matlab_path)
     
     toolkit_path = input('Path to the folder with LI Detector scripts: ', 's');
@@ -19,5 +20,5 @@
     addpath(genpath(sprintf('%s/sau-matlab-toolkit/grid-manipulation', toolkit_path)))
     addpath(genpath(sprintf('%s/lidetector', toolkit_path)))
 
-    javaaddpath(sprintf('%s/mysql-connector-java-8.0.16.jar', toolkit_path));
+    javaaddpath(sprintf('%s/mysql-connector-java-8.0.16.jar', matlab_path));
     
