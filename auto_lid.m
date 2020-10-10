@@ -21,7 +21,7 @@
     loadtoolkit;
 %   use info.txt in the directory as a example
 %   place your file in the MATLAB directory
-    fileID = fopen('info.txt','r');
+    fileID = fopen(sprintf('%s/info.txt',toolkit_path),'r');
     info = textscan(fileID, '%s%s');
 
 %%  INITIALIZATION
@@ -45,8 +45,10 @@
     else
         dimensions = [8 12];
     end
-      
+    
+    tablename_raw       = sprintf('%s_%d_RAW',expt_set,density);
     tablename_jpeg      = sprintf('%s_%d_JPEG',expt_set,density);
+    tablename_lac       = sprintf('%s_%d_LAC',expt_set,density);
     tablename_norm      = sprintf('%s_%d_NORM',expt_set,density);
     tablename_fit       = sprintf('%s_%d_FITNESS',expt_set,density);
     tablename_fits      = sprintf('%s_%d_FITNESS_STATS',expt_set,density);
@@ -56,6 +58,7 @@
     
     tablename_p2s  = info{1,2}{6};
     tablename_p2o  = info{1,2}{7};
+    tablename_s2o  = info{1,2}{8};
     tablename_bpos = info{1,2}{9};
     
     tablename_p2p   = info{1,2}{11};
@@ -72,16 +75,26 @@
         p2c_info{2},p2c_info{1},density,p2c_info{2}));
     
 %%  JPEG COMPETITION CORRECTION
-    if input('Do you want to use local artifact correction? [Y/N] ', 's') == 'Y'
-    %     jpeg_data = fetch(conn, sprintf(['select a.*, b.orf_name, c.%s, c.%s, c.%s '...
-    %         'from %s a, %s b, %s c '...
-    %         'where a.pos = b.pos and a.pos = c.pos '...
-    %         'order by a.hours, c.%s, c.%s, c.%s'],...
-    %         p2c_info(2,:), p2c_info(4,:), p2c_info(3,:),...
-    %         tablename_jpeg, tablename_p2o, p2c_info(1,:),...
-    %         p2c_info(2,:), p2c_info(3,:), p2c_info(4,:)));
-    %     jpeg_data.Properties.VariableNames = {'pos','hours','replicate1','replicate2','replicate3','average',...
-    %         'orf_name','plate','row','col'};
+
+    lac = input('Do you want to use local artifact correction? [Y/N] ', 's');
+    if  lac == 'Y'
+        lac_data = LocalCorrection(p2c_info,density,cont.name,...
+            tablename_s2o,tablename_p2s,tablename_raw,sql_info);
+        
+        exec(conn, sprintf('drop table %s',tablename_lac));
+        exec(conn, sprintf(['create table %s ( ',...
+            'pos int(11) not NULL, ',...
+            'hours double not NULL, ',...
+            'average double default NULL ',...
+            ')'],tablename_lac));
+        datainsert(conn, tablename_lac,...
+            {'pos','hours','average'},lac_data);
+        
+        exec(conn, sprintf(['update %s ',...
+            'set average = NULL ',...
+            'where pos in ',...
+            '(select pos from %s ',...
+            'where average is NULL'],tablename_lac,tablename_jpeg))
     end
     
 %%  SPATIAL BIAS CORRECTION
@@ -93,12 +106,19 @@
         IL = 0;
     end
 
-    hours = fetch(conn, sprintf(['select distinct hours from %s ',...
-        'order by hours asc'], tablename_jpeg));
-    hours = hours.hours;
-
-    fit_data = LinearInNorm(hours,n_plates,p2c_info,cont.name,...
-        tablename_p2o,tablename_jpeg,IL,density,dimensions,sql_info);
+    if lac == 'Y'
+        hours = fetch(conn, sprintf(['select distinct hours from %s ',...
+            'order by hours asc'], tablename_lac));
+        hours = hours.hours;
+        fit_data = LinearInNorm(hours,n_plates,p2c_info,cont.name,...
+            tablename_p2o,tablename_lac,IL,density,dimensions,sql_info);
+    else
+        hours = fetch(conn, sprintf(['select distinct hours from %s ',...
+            'order by hours asc'], tablename_jpeg));
+        hours = hours.hours;
+        fit_data = LinearInNorm(hours,n_plates,p2c_info,cont.name,...
+            tablename_p2o,tablename_jpeg,IL,density,dimensions,sql_info);
+    end
 
     exec(conn, sprintf('drop table %s',tablename_norm));
     exec(conn, sprintf(['create table %s ( ',...

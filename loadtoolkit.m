@@ -1,23 +1,13 @@
     
 %%  LOAD COLONY ANLYZER TOOLKIT
-
-    restoredefaultpath;
-    
-    matlab_path = input('Path to your MATLAB folder: ', 's');
-    cd(matlab_path)
     
     toolkit_path = input('Path to the folder with LI Detector scripts: ', 's');
-    if ~isempty(toolkit_path)
-        toolkit_path = sprintf('%s/%s',matlab_path,toolkit_path);
-    else
-        toolkit_path = matlab_path;
-    end
-    
     addpath(genpath(sprintf('%s/Matlab-Colony-Analyzer-Toolkit', toolkit_path)))
     addpath(genpath(sprintf('%s/bean-matlab-toolkit', toolkit_path)))
     addpath(genpath(sprintf('%s/sau-matlab-toolkit', toolkit_path)))
     addpath(genpath(sprintf('%s/sau-matlab-toolkit/grid-manipulation', toolkit_path)))
     addpath(genpath(sprintf('%s/lidetector', toolkit_path)))
 
-    javaaddpath(sprintf('%s/mysql-connector-java-8.0.16.jar', toolkit_path));
+    java_path = input('Path to mysql-connector .jar file: ', 's');
+    javaaddpath(sprintf('%s/mysql-connector-java-8.0.16.jar', java_path));
     
