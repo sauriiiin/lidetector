@@ -15,18 +15,18 @@
 
 %%  Load Paths to Files and Expt Info
 
-% %   open load_toolkit.m and update the paths
-%     load_toolkit;
-% %   use info.txt in the directory as a example
-% %   place your file in the MATLAB directory
-%     fileID = fopen('info.txt','r');
-%     info = textscan(fileID, '%s%s');
-
-%%  INITIALIZATION (EDIT THIS SECTION)
+%   open load_toolkit.m and update the paths
+    loadtoolkit;
+%   use info.txt in the directory as a example
+%   place your file in the MATLAB directory
+    fileID = fopen('info.txt','r');
+    info = textscan(fileID, '%s%s');
     
-    file_dir = '/home/sbp29/RAW_Data/YBRs/exp3/FS1_redo/J2'; % directory location for where the images are
-    expt_set = 'YBRs3_R_J2';
-    density = 1536; % colony density
+%%  INITIALIZATION
+    
+    file_dir = input('Path to image directory: ', 's');
+    expt_set = input('Name of Experiment Arm: ','s');
+    density = input('Colony-density of plates: ');
     
 %%  GETTING IMAGE FILES
     
@@ -45,41 +45,7 @@
     if isempty(hours)
         hours = -1;
     end
-     
-%%  PIXEL COUNT CORRECTION IF FOCAL LENGTH FOR ALL IMAGES IS NOT THE SAME
-%   Divide pix count with pix_cor value for the plate in order to correct
-%   for the focal length
-% 
-%     pix_cor = [55,1;54,1.02771070000000;53,1.05542140000000;52,1.08313210000000;...
-%         51,1.11084280000000;50,1.16399474700000;49,1.21714669400000;...
-%         48,1.26852041700000;47,1.31989414100000;46,1.37126786400000;...
-%         45,1.39150770600000;44,1.50909135300000;43,1.62667499900000;...
-%         42,1.68744457600000;41,1.79371474700000;40,1.89399660000000;...
-%         39,2.00545600000000;38,2.05122191100000;37,2.09698782200000;...
-%         36,2.24259310800000;35,2.27525516200000;34,2.61089798700000;...
-%         33,2.70344852800000;32,2.91500635400000;31,3.04622703700000;...
-%         30,3.17744772000000;29,3.46102065700000;28,3.78798182200000;...
-%         27,4.08786873800000;26,4.30061327400000;25,4.51335780900000;...
-%         24,5.04265185000000;23,5.67768396500000;22,6.01741860700000;...
-%         21,6.35715324900000;20,6.92600201900000;19,7.54727851600000;...
-%         18,8.16855501300000];
-%     
-%     multplr = [];
-%     time = [];
-%     for i = 1:length(files)
-%        img_info = imfinfo(files{i});
-%        fl = img_info.DigitalCamera.FocalLength;
-%        multplr = [multplr; pix_cor(pix_cor(:,1) == fl,2)];
-%        time = [time; str2double(strrep(img_info.DateTime(end-7:end-3),':','.'))];
-%     end
-%     
-%     time = round(mean(reshape(time, [4, 12])),2);
-%     time = time - time(1);
-%     
-%     if ~isempty(time)
-%         hours = time;
-%     end
-    
+
 %%  PLATE DENSITY AND ANALYSIS PARAMETERS
     
     if density == 6144
@@ -96,107 +62,116 @@
         'parallel', true, ...
         'verbose', true, ...
         'grid', OffsetAutoGrid('dimensions', dimensions), ... default
-        'threshold', BackgroundOffset('offset', 1.25) }; % default = 1.25
-    
-%%  Image Analysis
+        'threshold', BackgroundOffset('offset', 1.5) }; % default = 1.25
 
-    analyze_directory_of_images(files, params{:} );
-    
-%     pos = 1:length(files);
-%     for ii = 1 : length(pos)
-%         tic;
-%         analyze_image( files{pos(ii)}, params{:}, ...
-%             'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
-%         toc;
-%     end
-
-%%  All images with no grid
-%   Those images that weren't analyzed correctly
+%%  IMAGE ANALYSIS
 
     all = zeros(1, size(files, 1));
     for ii = 1 : size(all, 2)
         all(ii) = exist(strcat(files{ii}, '.binary'));
     end
     pos = find(all==0);
-
-%%  Manually fix images #1
-
-%     pos = 1:length(files);
-    for ii = 1 : length(pos)
-        tic;
-        analyze_image( files{pos(ii)}, params{:}, ...
-            'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
-        toc;
+    
+    if isempty(pos)
+        disp('All files are already analyzed.')
+        if input('Do you want to re-analyze them? [Y/N] ', 's') == 'Y'
+            analyze_directory_of_images(files, params{:} );
+            direct_upload = 'N';
+        else
+            direct_upload = 'Y';
+        end
+    else
+        fprintf('%d out of %d images remain to be analyzed.\n',...
+            length(pos),...
+            length(files))
+        if input('Do you want to re-analyze all? [Y/N] ', 's') == 'Y'
+            analyze_directory_of_images(files, params{:} );
+            direct_upload = 'N';
+        else
+            files2 = files;
+            files2(pos) = [];
+            analyze_directory_of_images(files2, params{:} );
+            direct_upload = 'N';
+        end
     end
 
-%%  Find Low Correlation Images
-% 
-%     tmp = strfind(files, '/');
-%     threshold = 0.99;
-%     pos = [];
-% 
-%     for ii = 1:3:length(files)
-%         if nancorrcoef(load_colony_sizes(files{ii}),...
-%                 load_colony_sizes(files{ii+1})) < threshold
-%             pos = [pos, ii];
-%         elseif nancorrcoef(load_colony_sizes(files{ii+1}),...
-%                 load_colony_sizes(files{ii+2})) < threshold
-%             pos = [pos, ii];
-%         elseif nancorrcoef(load_colony_sizes(files{ii+2}),...
-%                 load_colony_sizes(files{ii})) < threshold
-%             pos = [pos, ii];
-%         end
-%     end
-% 
-%%  Manually fix images #2
-% 
-%     for ii = 1 : size(pos,2)
-%         analyze_image(files{pos(ii)}, params{:}, ...
-%             'grid', ManualGrid('dimensions', dimensions), 'threshold',...
-%             BackgroundOffset('offset', 1.15));
-% 
-%         analyze_image(files{pos(ii) + 1}, params{:}, ...
-%             'grid', ManualGrid('dimensions', dimensions), 'threshold',...
-%             BackgroundOffset('offset', 1.15));
-% 
-%         analyze_image(files{pos(ii) + 2}, params{:}, ...
-%             'grid', ManualGrid('dimensions', dimensions), 'threshold',...
-%             BackgroundOffset('offset', 1.15));
-%     end
-% 
-% 
-%%  View Analyzed Images
+    if direct_upload == 'N'
+%%  COLLECT IMAGES WITH NO GRID
+%   Those images that weren't analyzed correctly
 
-    pos = [];
-    for ii = 1:length(files)
-        view_plate_image(files{ii},'applyThreshold', true)
-        switch questdlg('Was the Binary Image look fine?',...
-            'Binary Image',...
-            'Yes','No','Yes')
-            case 'No'
-                pos = [pos, ii];
+        all = zeros(1, size(files, 1));
+        for ii = 1 : size(all, 2)
+            all(ii) = exist(strcat(files{ii}, '.binary'));
+        end
+        pos = find(all==0);
+
+        if isempty(pos)
+            disp('All images were successfully analyzed.')
+        else
+            fprintf('%d image/s were not analyzed.\n',length(pos))
+            alt_thresh = input('Would you like to re-analyze all images using a different background threshold? [Y/N] ', 's');
+            if alt_thresh == 'Y'
+                thresh = input('New threshold (default = 1.25): ');
+                params = { ...
+                    'parallel', true, ...
+                    'verbose', true, ...
+                    'grid', OffsetAutoGrid('dimensions', dimensions), ... default
+                    'threshold', BackgroundOffset('offset', thresh) };
+                analyze_directory_of_images(files, params{:} );
+
+                all = zeros(1, size(files, 1));
+                for ii = 1 : size(all, 2)
+                    all(ii) = exist(strcat(files{ii}, '.binary'));
+                end
+                pos2 = find(all==0);
+                if isempty(pos2)
+                    disp('All images were successfully analyzed with the new threshold.')
+                else
+                    fprintf('%d image/s were not analyzed.\n Manually place grid using previous threshold\n',length(pos))
+                    for ii = 1 : length(pos)
+                        analyze_image( files{pos(ii)}, params{:}, ...
+                            'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
+                    end
+                end
+            else
+                disp('Manually place grid on images')
+                for ii = 1 : length(pos)
+                    analyze_image( files{pos(ii)}, params{:}, ...
+                        'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
+                end
+            end
+        end
+    end
+    fprintf('Examine binary images to verify proper colony detection before going forward.\nPress enter to proceed.\n')
+    pause
+    
+    if input('Are the images properly analyzed? [Y/N]: ', 's') == 'N'
+        if input('Is there a problem with all of them? [Y/N]: ', 's') == 'Y'
+            disp('Manually place grid on all images')
+            for ii = 1 : length(files)
+                analyze_image( files{ii}, params{:}, ...
+                    'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
+            end
+        else
+            pos = input('Problematic images: ');
+            
+            disp('Manually place grid on images')
+            for ii = 1 : length(pos)
+                analyze_image( files{pos(ii)}, params{:}, ...
+                    'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
+            end
         end
     end
     
-    for ii = 1 : length(pos)
-        tic;
-        analyze_image( files{pos(ii)}, params{:}, ...
-            'grid', ManualGrid('dimensions', dimensions), 'threshold', BackgroundOffset('offset', 1.25));
-        toc;
-    end
-
+%     disp('Press enter to proceed.')
+%     pause
     
-%%  Load Colony Size Data
+%%  LOAD COLONY SIZE
 
+    disp('Proceeding to upload raw data to mySQL.')
     cs = load_colony_sizes(files);
-% %     size(cs)    % should be = (number of plates x 3 x number of time points) x density
-% 
-% %   zoom level corrector of pixel counts    
-%     if ~isempty(multplr)
-%         cs = cs.*multplr;
-%     end
 
-%%  Mean Colony Size For Each Plate
+%  Mean Colony Size For Each Plate
 
     cs_mean = [];
     tmp = cs';
@@ -212,7 +187,7 @@
     end
     cs_mean = cs_mean';
 
-%%  Putting Colony Size (pixels) And Averages Together
+%  Putting Colony Size (pixels) And Averages Together
 
     master = [];
     tmp = [];
@@ -234,7 +209,7 @@
     end
     master = master';
 
-%%  Upload RAW Colony Size Data to SQL
+%%  UPLOAD RAW COLONY SIZE DATA TO SQL
 
     sql_info = {info{1,2}{2:4}}; % {usr, pwd, db}
     conn = connSQL(sql_info);
@@ -246,15 +221,14 @@
         'where density = %d ',...
         'order by a.%s, a.%s, a.%s'],...
         p2c_info{1},density,p2c_info{2},p2c_info{4},p2c_info{3}));
-%     p2c.Properties.VariableNames = {'pos','density','plate','row','col'};
 
     exec(conn, sprintf('drop table %s',tablename_raw));  
     exec(conn, sprintf(['create table %s (pos int not null, hours double not null,'...
-        'replicate1 double default null, replicate2 double default null, ',...
-        'replicate3 double default null, average double default null)'], tablename_raw));
+        'image1 double default null, image2 double default null, ',...
+        'image3 double default null, average double default null)'], tablename_raw));
 
     colnames_raw = {'pos','hours'...
-        'replicate1','replicate2','replicate3',...
+        'image1','image2','image3',...
         'average'};
 
     tmpdata = [];
@@ -267,58 +241,10 @@
     datainsert(conn,tablename_raw,colnames_raw,data);
     toc
     
-%%  SMUDGE_BOX
-
-%     tablename_sbox  = sprintf('%s_smudgebox', expt_set);
-%     
-% %   [density, plate, row, col ; density, plate, row, col ;...; density, plate, row, col]
-%     sbox = [6144,1,43,50;
-%         6144,1,44,50;
-%         6144,1,45,50;
-%         6144,1,43,51;
-%         6144,1,44,51;
-%         6144,1,45,51;
-%         6144,1,43,52;
-%         6144,1,44,52;
-%         6144,1,45,52;
-%         6144,1,43,53;
-%         6144,1,44,53;
-%         6144,1,45,53;
-%         6144,1,43,54;
-%         6144,1,44,54;
-%         6144,1,45,54;
-%         6144,1,43,55;
-%         6144,1,44,55;
-%         6144,1,45,55;
-%         6144,1,43,56;
-%         6144,1,44,56;
-%         6144,1,45,56;
-%         6144,1,43,57;
-%         6144,1,44,57;
-%         6144,1,45,57;
-%         6144,1,43,58;
-%         6144,1,44,58;
-%         6144,1,45,58;
-%         6144,1,43,59;
-%         6144,1,44,59;
-%         6144,1,45,59];
-%     
-%     exec(conn, sprintf('drop table %s',tablename_sbox));
-%     exec(conn, sprintf(['create table %s ',...
-%         '(pos int not null)'],tablename_sbox));
-%     
-%     for i = 1:size(sbox,1)
-%         exec(conn, sprintf(['insert into %s ',...
-%             'select pos from %s ',...
-%             'where density = %d ',...
-%             'and plate = %d and row = %d and col = %d'],...
-%             tablename_sbox, p2c_info{1},...
-%             sbox(i,:)));
-%     end
-    
-%%  SPATIAL cleanup
+%%  SPATIAL CLEANUP
 %   Border colonies, light artefact and smudge correction
-
+    disp('Cleaning raw data to remove borders and light artifact.')
+    
     tablename_jpeg  = sprintf('%s_%d_JPEG',expt_set,density);
     tablename_bpos  = info{1,2}{9};
 
@@ -327,22 +253,44 @@
         '(select * from %s)'], tablename_jpeg, tablename_raw));
 
     exec(conn, sprintf(['update %s ',...
-        'set replicate1 = NULL, replicate2 = NULL, ',...
-        'replicate3 = NULL, average = NULL ',...
+        'set image1 = NULL, image2 = NULL, ',...
+        'image3 = NULL, average = NULL ',...
         'where pos in ',...
         '(select pos from %s)'],tablename_jpeg,tablename_bpos));
 
     exec(conn, sprintf(['update %s ',...
-        'set replicate1 = NULL, replicate2 = NULL, ',...
-        'replicate3 = NULL, average = NULL ',...
+        'set image1 = NULL, image2 = NULL, ',...
+        'image3 = NULL, average = NULL ',...
         'where average <= 10'],tablename_jpeg));
 
-%     exec(conn, sprintf(['update %s ',...
-%         'set replicate1 = NULL, replicate2 = NULL, ',...
-%         'replicate3 = NULL, average = NULL ',...
-%         'where pos in ',...
-%         '(select pos from %s)'],tablename_jpeg,tablename_sbox));
+%%  SMUDGE_BOX
+
+    if input('Did you notice any smudges on the colony grid? [Y/N] ', 's') == 'Y'
+        tablename_sbox  = sprintf('%s_smudgebox', expt_set);
+
+    %   [density, plate, row, col ; density, plate, row, col ;...; density, plate, row, col]
+        sbox = input('Enter colony positions to reject: [density, plate, row, col; density, plate, row, col;... ] \n');
+
+        exec(conn, sprintf('drop table %s',tablename_sbox));
+        exec(conn, sprintf(['create table %s ',...
+            '(pos int not null)'],tablename_sbox));
+
+        for i = 1:size(sbox,1)
+            exec(conn, sprintf(['insert into %s ',...
+                'select pos from %s ',...
+                'where density = %d ',...
+                'and plate = %d and row = %d and col = %d'],...
+                tablename_sbox, p2c_info{1},...
+                sbox(i,:)));
+        end  
+
+        exec(conn, sprintf(['update %s ',...
+            'set replicate1 = NULL, replicate2 = NULL, ',...
+            'replicate3 = NULL, average = NULL ',...
+            'where pos in ',...
+            '(select pos from %s)'],tablename_jpeg,tablename_sbox));
+    end
 
 %%  END
-%     close(conn)
+    close(conn)
 %%
