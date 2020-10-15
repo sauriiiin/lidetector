@@ -7,13 +7,12 @@
 %   
 %   Final version of the LI Detector Pipeline
 %
-%   Colony Size/JPEG data to Q-VALUES for any experiment with  
+%   Colony Size/JPEG data to P-VALUES for any experiment with  
 %   Linear Interpolation based Reference Normalization.
 %   Inputs Required:
 %       sql info (username, password, database name),
 %       experiment name, pos2coor tablename, pos2orf_name tablename, 
 %       control name, borderpos, smudgebox
-%   Provides option to work with .csv rather than SQL
 
 %%  Load Paths to Files and Expt Info
 

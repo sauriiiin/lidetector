@@ -1,6 +1,6 @@
 # LI Detector
 ## A framework for sensitive colony-based screens regardless of the distribution of fitness effects
-## [bioRxiv](https://doi.org/10.1101/2020.06.27.175216){target="_blank"}
+### Pre-print available on [bioRxiv](https://doi.org/10.1101/2020.06.27.175216).
 
 ## 1. Initialize
 ### Generating tables necessary for the effective use of the LI Detector
@@ -14,14 +14,14 @@
         - One plate per sheet in excel
         - Cells contain strain-id
         - File should be in .xlsx format
-        - [Example](https://pitt-my.sharepoint.com/:x:/g/personal/sbp29_pitt_edu/EUqQET4XWYtNktm35JmFjrkBugFrj3fPiRk_Mk2MjN2MQQ){target="_blank"}
+        - [Example](https://pitt-my.sharepoint.com/:x:/g/personal/sbp29_pitt_edu/EUqQET4XWYtNktm35JmFjrkBugFrj3fPiRk_Mk2MjN2MQQ)
     - Excel table specifying strain-id to orf-name relationships
         - First column is strain_id
         - Second column is orf_name (should include the reference strain)
         - Give unique strain-ids to each orf
         - Each strain-id from the platemaps should have an associated orf-name
         - File should be in .xlsx format
-        - [Example](https://pitt-my.sharepoint.com/:x:/g/personal/sbp29_pitt_edu/EX_KyGzwFp9DvrcKN9pwREcBeWoA4viPlbWRnVuCxlKw6A){target="_blank"}
+        - [Example](https://pitt-my.sharepoint.com/:x:/g/personal/sbp29_pitt_edu/EX_KyGzwFp9DvrcKN9pwREcBeWoA4viPlbWRnVuCxlKw6A)
 2. Successful run will create the following tables:
     - <strong>_borderpos</strong> = border positions of all plates in the experiment
         - 1 border for 384 density, 2 for 1536 and 4 for 6144
@@ -32,7 +32,7 @@
         - for internal use
     - <strong>_pos2strain_id</strong> = position ids and their corresponding strain ids
     - <strong>_strainid2orf_name</strong> = same as excel table from above
-3. Example files can be found in [Data.zip](https://github.com/sauriiiin/lidetector/blob/master/Data.zip){target="_blank"}.
+3. Example files can be found in [Data.zip](https://github.com/sauriiiin/lidetector/blob/master/Data.zip).
     
 ## 2. Analyze Images
 ### Pixel count estimation from pictures using the MATLAB Colony Analyzer Toolkit
@@ -54,7 +54,7 @@
         - pixel count estimations for borders and smudgebox NULL'd
         - and any pixel count estimation < 10 is also NULL'd - likely to be a light artifact  
 4. If the images are already analyzed using a different software then make sure the colony sizes in the _JPEG table are arranged in the ascending order of hours, plate number, column number, row number.
-5. Example files can be found in [Data.zip](https://github.com/sauriiiin/lidetector/blob/master/Data.zip){target="_blank"}.
+5. Example files can be found in [Data.zip](https://github.com/sauriiiin/lidetector/blob/master/Data.zip).
     
 ## 3. Spatial Bias Correction
 ### Relative fitness measurements and p-value estimation from colony-size data
@@ -68,6 +68,6 @@
     - <strong>_PVALUE</strong> = strain-id-wise empirical p-values
         - stat = (strain mean fitness - reference mean fitness)/reference fitness standard deviation
         - es = (strain mean fitness - reference mean fitness)reference mean fitness
-2. Example files can be found in [Data.zip](https://github.com/sauriiiin/lidetector/blob/master/Data.zip){target="_blank"}.
+2. Example files can be found in [Data.zip](https://github.com/sauriiiin/lidetector/blob/master/Data.zip).
         
         
