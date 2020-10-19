@@ -62,7 +62,7 @@
         'parallel', true, ...
         'verbose', true, ...
         'grid', OffsetAutoGrid('dimensions', dimensions), ... default
-        'threshold', BackgroundOffset('offset', 1.5) }; % default = 1.25
+        'threshold', BackgroundOffset('offset', 1.25) }; % default = 1.25
 
 %%  IMAGE ANALYSIS
 
