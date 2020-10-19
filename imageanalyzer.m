@@ -19,7 +19,7 @@
     loadtoolkit;
 %   use info.txt in the directory as a example
 %   place your file in the MATLAB directory
-    fileID = fopen('info.txt','r');
+    fileID = fopen(sprintf('%s/info.txt',toolkit_path),'r');
     info = textscan(fileID, '%s%s');
     
 %%  INITIALIZATION
@@ -84,7 +84,7 @@
         fprintf('%d out of %d images remain to be analyzed.\n',...
             length(pos),...
             length(files))
-        if input('Do you want to re-analyze all? [Y/N] ', 's') == 'Y'
+        if input('Do you want to analyze all? [Y/N] ', 's') == 'Y'
             analyze_directory_of_images(files, params{:} );
             direct_upload = 'N';
         else
