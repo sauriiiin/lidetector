@@ -1,8 +1,10 @@
 %%  Sau MATLAB Colony Analyzer Toolkit
 %
-%%  analyzeallimages.m
+%%  justanalyze.m
 
 %   Author: Saurin Parikh, October 2020
+%
+%   Analyze all images within subdirectories.
 %
 %   Needs info.txt file in the home directory or change path wherever
 %   necessary
