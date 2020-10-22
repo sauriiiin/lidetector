@@ -40,16 +40,17 @@ function out = LocalCorrection(p2c_info,density,cont_name,...
                 neigh(i,6) = isnotempty(temp.pos(temp.col == c + 1 & temp.row == r - 1));
                 neigh(i,7) = isnotempty(temp.pos(temp.col == c + 1 & temp.row == r));
                 neigh(i,8) = isnotempty(temp.pos(temp.col == c + 1 & temp.row == r + 1));
-
-                neigh_sr(i,1) = isnotempty(temp.pos(temp.col == c - 2 & temp.row == r - 2));
-                neigh_sr(i,2) = isnotempty(temp.pos(temp.col == c - 2 & temp.row == r));
-                neigh_sr(i,3) = isnotempty(temp.pos(temp.col == c - 2 & temp.row == r + 2));
-                neigh_sr(i,4) = isnotempty(temp.pos(temp.col == c & temp.row == r - 2));
-                neigh_sr(i,5) = isnotempty(temp.pos(temp.col == c & temp.row == r + 2));
-                neigh_sr(i,6) = isnotempty(temp.pos(temp.col == c + 2 & temp.row == r - 2));
-                neigh_sr(i,7) = isnotempty(temp.pos(temp.col == c + 2 & temp.row == r));
-                neigh_sr(i,8) = isnotempty(temp.pos(temp.col == c + 2 & temp.row == r + 2));
-
+                
+                if density >= 6144
+                    neigh_sr(i,1) = isnotempty(temp.pos(temp.col == c - 2 & temp.row == r - 2));
+                    neigh_sr(i,2) = isnotempty(temp.pos(temp.col == c - 2 & temp.row == r));
+                    neigh_sr(i,3) = isnotempty(temp.pos(temp.col == c - 2 & temp.row == r + 2));
+                    neigh_sr(i,4) = isnotempty(temp.pos(temp.col == c & temp.row == r - 2));
+                    neigh_sr(i,5) = isnotempty(temp.pos(temp.col == c & temp.row == r + 2));
+                    neigh_sr(i,6) = isnotempty(temp.pos(temp.col == c + 2 & temp.row == r - 2));
+                    neigh_sr(i,7) = isnotempty(temp.pos(temp.col == c + 2 & temp.row == r));
+                    neigh_sr(i,8) = isnotempty(temp.pos(temp.col == c + 2 & temp.row == r + 2));
+                end
                 i = i + 1;
             end
         end
@@ -63,7 +64,7 @@ function out = LocalCorrection(p2c_info,density,cont_name,...
         'order by a.hours, b.%s, b.%s, b.%s'],...
         tablename_raw,...
         p2c_info{1},tablename_p2s,...
-        p2c_info{2},p2c_info{3},p2c_info{4}));
+        p2c_info{2},p2c_info{4},p2c_info{3}));
     rawdata.colony(rawdata.strain_id == cont.id) = 1;
 
     %% COMPETITION CORRECTION
@@ -71,16 +72,22 @@ function out = LocalCorrection(p2c_info,density,cont_name,...
     for hr = sort(unique(rawdata.hours))'
         for pl = sort(unique(rawdata.plate(rawdata.hours == hr)))'
             tempdat = rawdata(rawdata.hours == hr & rawdata.plate == pl,:);
-            tempdat.average(tempdat.strain_id == 0) = 0;
+%             tempdat.average(tempdat.strain_id == 0) = 0;
 
             for i = 1:size(grids, 1)
-                tempdat.neigh(tempdat.pos == grids(i)) = mean(tempdat.average(ismember(tempdat.pos, grids(i,2:9))), 'omitnan');
-                tempdat.neigh_sr(tempdat.pos == grids_sr(i)) = mean(tempdat.average(ismember(tempdat.pos, grids_sr(i,2:9))), 'omitnan');
+                tempdat.neigh(tempdat.pos == grids(i)) = mean(tempdat.average(ismember(tempdat.pos, grids(i,2:9))), 'omitnan') + 0.0001;
+                if density >= 6144
+                    tempdat.neigh_sr(tempdat.pos == grids_sr(i)) = mean(tempdat.average(ismember(tempdat.pos, grids_sr(i,2:9))), 'omitnan') + 0.0001;
+                end
             end
 
-            tempdat.neigh(isnan(tempdat.average) & tempdat.strain_id ~= -2) = NaN;
-            tempdat.neigh_sr(isnan(tempdat.average) & tempdat.strain_id ~= -2) = NaN;
-            tempdat.score = tempdat.average./((tempdat.neigh + tempdat.neigh_sr)/2);
+%             tempdat.neigh(isnan(tempdat.average) & tempdat.strain_id ~= -2) = NaN;
+%             tempdat.neigh_sr(isnan(tempdat.average) & tempdat.strain_id ~= -2) = NaN;
+            if density >= 6144
+                tempdat.score = tempdat.average./((tempdat.neigh + tempdat.neigh_sr)/2);
+            else
+                tempdat.score = tempdat.average./tempdat.neigh;
+            end
 
             md = 1.4826 * median(abs(tempdat.score(tempdat.strain_id == cont.id) - median(tempdat.score(tempdat.strain_id == cont.id), 'omitnan')), 'omitnan');
             ll = median(tempdat.score(tempdat.strain_id == cont.id),'omitnan') - 3*md;
@@ -138,9 +145,9 @@ function out = LocalCorrection(p2c_info,density,cont_name,...
 
             tempdat.lac = tempdat.average;
             tempdat.average(tempdat.comp == -1) = tempdat.lac(tempdat.comp == -1) * ...
-                median(tempdat.lac(tempdat.strain_id == cont.id), 'omitnan')./median(tempdat.lac(tempdat.comp == -1), 'omitnan');
+                median(tempdat.lac(tempdat.strain_id == cont.id & tempdat.comp == 0), 'omitnan')./median(tempdat.lac(tempdat.comp == -1), 'omitnan');
             tempdat.average(tempdat.comp == 1) = tempdat.lac(tempdat.comp == 1) * ...
-                median(tempdat.lac(tempdat.strain_id == cont.id), 'omitnan')./median(tempdat.lac(tempdat.comp == 1), 'omitnan');
+                median(tempdat.lac(tempdat.strain_id == cont.id & tempdat.comp == 0), 'omitnan')./median(tempdat.lac(tempdat.comp == 1), 'omitnan');
 
             out = [out; tempdat(:,[1,7,8])];
         end

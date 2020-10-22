@@ -41,10 +41,6 @@
         hrs = strfind(tmpdir, '/'); hrs = tmpdir(hrs(end)+1:end);
         hours = [hours, str2num(hrs(1:end-1))];
     end
-    
-    if isempty(hours)
-        hours = -1;
-    end
 
 %%  PLATE DENSITY AND ANALYSIS PARAMETERS
     
@@ -225,7 +221,8 @@
     exec(conn, sprintf('drop table %s',tablename_raw));  
     exec(conn, sprintf(['create table %s (pos int not null, hours double not null,'...
         'image1 double default null, image2 double default null, ',...
-        'image3 double default null, average double default null)'], tablename_raw));
+        'image3 double default null, average double default null, '...
+        'primary key (pos, hours))'], tablename_raw));
 
     colnames_raw = {'pos','hours'...
         'image1','image2','image3',...
@@ -245,23 +242,23 @@
 %   Border colonies, light artefact and smudge correction
     disp('Cleaning raw data to remove borders and light artifact.')
     
-    tablename_jpeg  = sprintf('%s_%d_JPEG',expt_set,density);
+    tablename_clean  = sprintf('%s_%d_CLEAN',expt_set,density);
     tablename_bpos  = info{1,2}{9};
 
-    exec(conn, sprintf('drop table %s',tablename_jpeg));
-    exec(conn, sprintf(['create table %s ',...
-        '(select * from %s)'], tablename_jpeg, tablename_raw));
+    exec(conn, sprintf('drop table %s',tablename_clean));
+    exec(conn, sprintf(['create table %s (primary key (pos, hours)) ',...
+        '(select * from %s)'], tablename_clean, tablename_raw));
 
     exec(conn, sprintf(['update %s ',...
         'set image1 = NULL, image2 = NULL, ',...
         'image3 = NULL, average = NULL ',...
         'where pos in ',...
-        '(select pos from %s)'],tablename_jpeg,tablename_bpos));
+        '(select pos from %s)'],tablename_clean,tablename_bpos));
 
     exec(conn, sprintf(['update %s ',...
         'set image1 = NULL, image2 = NULL, ',...
         'image3 = NULL, average = NULL ',...
-        'where average <= 10'],tablename_jpeg));
+        'where average <= 10'],tablename_clean));
 
 %%  SMUDGE_BOX
 
@@ -288,7 +285,7 @@
             'set replicate1 = NULL, replicate2 = NULL, ',...
             'replicate3 = NULL, average = NULL ',...
             'where pos in ',...
-            '(select pos from %s)'],tablename_jpeg,tablename_sbox));
+            '(select pos from %s)'],tablename_clean,tablename_sbox));
     end
 
 %%  END
