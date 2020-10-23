@@ -11,11 +11,11 @@
 %%
 
 function bg = LIHeart(cont_avg,cont_pos,IL,dimensions)
-    
-    rows = dimensions(1)/2;
-    cols = dimensions(2)/2;
 
     if IL == 1
+        rows = dimensions(1)/2;
+        cols = dimensions(2)/2;
+        
         [a,b,c,d] = downscale(cont_avg);
         plates = {a,b,c,d};
         
@@ -67,9 +67,59 @@ function bg = LIHeart(cont_avg,cont_pos,IL,dimensions)
         end
         bg = grid2row(plategen(bground{1},bground{2},bground{3},bground{4}))';
     else
-        cbground = contBG(cont_avg).*cont_pos;
-        bground = ((fillmissing(fillmissing(cont_avg, 'linear',2),'linear',1) +...
-                    (fillmissing(fillmissing(cont_avg, 'linear',1),'linear',2)))/2).*~cont_pos;
-        bg = grid2row(cbground + bground)';
+%%  OLD CODE        
+%         cbground = contBG(cont_avg).*cont_pos;
+%         bground = ((fillmissing(fillmissing(cont_avg, 'linear',2),'linear',1) +...
+%                     (fillmissing(fillmissing(cont_avg, 'linear',1),'linear',2)))/2).*~cont_pos;
+%         bg = grid2row(cbground + bground)';
+%%
+        rows = dimensions(1);
+        cols = dimensions(2);
+        
+        [p,q,r,s] = downscale(cont_avg);
+        [xq,yq] = ndgrid(1:rows,1:cols);
+
+        if nansum(nansum(p)) ~= 0 %Top Left
+            P = contBG(p);
+            p = (fillmissing(fillmissing(p, 'linear',2),'linear',1) +...
+                (fillmissing(fillmissing(p, 'linear',1),'linear',2)))/2;
+            [x,y] = ndgrid(1:2:rows,1:2:cols);
+            f = griddedInterpolant(x,y,p,'linear');
+            plate = f(xq,yq);
+            [~,x,y,z] = downscale(plate);
+            bg = plategen(P,x,y,z);
+
+        elseif nansum(nansum(q)) ~= 0 % Top Right
+            Q = contBG(q);
+            q = (fillmissing(fillmissing(q, 'linear',2),'linear',1) +...
+                (fillmissing(fillmissing(q, 'linear',1),'linear',2)))/2;
+            [x,y] = ndgrid(1:2:rows,2:2:cols); 
+            f = griddedInterpolant(x,y,q,'linear');
+            plate = f(xq,yq);
+            [x,~,y,z] = downscale(plate);
+            bg = plategen(x,Q,y,z);
+
+        elseif nansum(nansum(r)) ~= 0 % Bottom Left
+            R = contBG(r);
+            r = (fillmissing(fillmissing(r, 'linear',2),'linear',1) +...
+                (fillmissing(fillmissing(r, 'linear',1),'linear',2)))/2;
+            [x,y] = ndgrid(2:2:rows,1:2:cols); 
+            f = griddedInterpolant(x,y,r,'linear');
+            plate = f(xq,yq);
+            [x,y,~,z] = downscale(plate);
+            bg = plategen(x,y,R,z);
+
+        else % Bottom Right
+            S = contBG(s);
+            s = (fillmissing(fillmissing(s, 'linear',2),'linear',1) +...
+                (fillmissing(fillmissing(s, 'linear',1),'linear',2)))/2;
+            [x,y] = ndgrid(2:2:rows,2:2:cols); 
+            f = griddedInterpolant(x,y,s,'linear');
+            plate = f(xq,yq);
+            [x,y,z,~] = downscale(plate);
+            bg = plategen(x,y,z,S);
+
+        end
+        bg = grid2row(bg)';
     end
 end
