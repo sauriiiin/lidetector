@@ -36,7 +36,7 @@
             lac = 'Y';
         else
             IL = 0;
-            lac = 'N';
+            lac = 'Y';
         end
         
         for e = expts
