@@ -26,7 +26,7 @@ function out = LocalCorrection(p2c_info,density,cont_name,...
     neigh = zeros(density*length(unique(p2c.plate)),8);
     neigh_sr = zeros(density*length(unique(p2c.plate)),8);
     i = 1;
-    for pl = unique(p2c.plate)
+    for pl = unique(p2c.plate)'
         temp = p2c(p2c.plate == pl,:);
         for c = sort(unique(temp.col))'
             for r = sort(unique(temp.row(temp.col == c)))'
