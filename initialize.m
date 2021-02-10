@@ -90,9 +90,9 @@
    
 %%  LOADING DATA
 %   Using info.txt and init.txt files just created
-    fileID = fopen('info.txt','r');
+    fileID = fopen(sprintf('%s/info.txt', toolkit_path),'r');
     info = textscan(fileID, '%s%s');
-    fileID = fopen('init.txt','r');
+    fileID = fopen(sprintf('%s/init.txt', toolkit_path),'r');
     init = textscan(fileID, '%f%f');
     
     iden = min(init{1,1}(init{1,2} ~= 0));
