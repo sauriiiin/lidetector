@@ -48,7 +48,7 @@
         'average'};
     
     master = xlsread(file_dir); %load cs data from .xlsx file
-    hours = []; %distinct hours from the cs data file
+    hours = unique(master(:,1)); %distinct hours from the cs data file
 
     tmpdata = [];
     for ii=1:length(hours)

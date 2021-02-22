@@ -84,8 +84,7 @@
             analyze_directory_of_images(files, params{:} );
             direct_upload = 'N';
         else
-            files2 = files;
-            files2(pos) = [];
+            files2 = files(pos);
             analyze_directory_of_images(files2, params{:} );
             direct_upload = 'N';
         end
@@ -219,7 +218,7 @@
         p2c_info{1},density,p2c_info{2},p2c_info{4},p2c_info{3}));
 
     exec(conn, sprintf('drop table %s',tablename_raw));  
-    exec(conn, sprintf(['create table %s (pos int not null, hours double not null,'...
+    exec(conn, sprintf(['create table %s (pos bigint not null, hours double not null,'...
         'image1 double default null, image2 double default null, ',...
         'image3 double default null, average double default null, '...
         'primary key (pos, hours))'], tablename_raw));
@@ -270,7 +269,7 @@
 
         exec(conn, sprintf('drop table %s',tablename_sbox));
         exec(conn, sprintf(['create table %s ',...
-            '(pos int not null)'],tablename_sbox));
+            '(pos bigint not null)'],tablename_sbox));
 
         for i = 1:size(sbox,1)
             exec(conn, sprintf(['insert into %s ',...
