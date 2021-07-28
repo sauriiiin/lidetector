@@ -401,6 +401,7 @@
 
     datainsert(conn,tablename_s2o,colnames_s2o,tbl_s2o);
 
+    exec(conn, sprintf('drop table %s',tablename_p2o)); 
     exec(conn, sprintf(['create table %s ',...
         ' (select a.pos, b.orf_name',...
         ' from %s a, %s b',...
@@ -413,7 +414,7 @@
 
     exec(conn, sprintf('drop table %s',tablename_bpos));
     exec(conn, sprintf(['create table %s ',...
-        '(pos int not null)'],tablename_bpos));
+        '(pos bigint not null, primary key (pos))'],tablename_bpos));
     
     p2c_den = fetch(conn, sprintf(['select distinct density ',...
         'from %s order by density asc'], tablename_p2c));
