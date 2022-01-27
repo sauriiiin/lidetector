@@ -109,7 +109,11 @@
     
 %%  SPATIAL BIAS CORRECTION
 %   Linear Interpolation based CN
-
+    
+    if isopen(conn) == 0
+        conn = connSQL(sql_info);
+    end
+    
     if input('Do you want to perform source-normalization? [Y/N] ', 's') == 'Y'
         IL = 1; % 1 = to source norm / 0 = to not
     else
@@ -152,6 +156,10 @@
         tablename_fit,tablename_norm,tablename_p2o,tablename_p2s));
     
 %%  FITNESS STATS
+    
+    if isopen(conn) == 0
+        conn = connSQL(sql_info);
+    end
 
     if input('Do you want to calculate empirical p-values? [Y/N] ', 's') == 'Y'
         
@@ -251,7 +259,8 @@
             pdata{iii}.es                                       = num2cell(es);
             pdata{iii}.es(cellfun(@isnan,pdata{iii}.es))        = {[]};
 
-            sqlwrite(conn,tablename_pval,struct2table(pdata{iii}));
+            sqlwrite(conn,tablename_pval,struct2table(pdata{iii}),...
+                'Schema',info{1,2}{4});
         end
     end
         

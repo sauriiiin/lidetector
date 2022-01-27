@@ -100,22 +100,26 @@
     sql_info = {info{1,2}{2:4}}; % {usr, pwd, db}
     conn = connSQL(sql_info);
     
-    fprintf('The present working directory is: %s\n',pwd)
-    plate_design_path = input('Path to lowest-density plate-design file (.xlsx): ','s');
-    if exist(plate_design_path, 'file') == 0
-        plate_design_path = input('Please re-enter the path: ','s');
+    sqlcollection = input('Are you using collection platemap/s stored in the mySQL database? [Y/N] ','s');
+    if sqlcollection == 'Y'
+        data = initialize_collection(sql_info, iden);
+    else
+        fprintf('The present working directory is: %s\n',pwd)
+        plate_design_path = input('Path to lowest-density plate-design file (.xlsx): ','s');
         if exist(plate_design_path, 'file') == 0
             plate_design_path = input('Please re-enter the path: ','s');
+            if exist(plate_design_path, 'file') == 0
+                plate_design_path = input('Please re-enter the path: ','s');
+            end
+        end
+
+        [~,sheet_name]=xlsfinfo(plate_design_path);
+    %   init_plate.xlsx has initial plate maps - one per sheet
+    %   each mutant is represented by a unique numeric identifier (strain_id)
+        for k=1:numel(sheet_name)
+          data{k}=xlsread(plate_design_path,sheet_name{k});
         end
     end
-
-    [~,sheet_name]=xlsfinfo(plate_design_path);
-%   init_plate.xlsx has initial plate maps - one per sheet
-%   each mutant is represented by a unique numeric identifier (strain_id)
-    for k=1:numel(sheet_name)
-      data{k}=xlsread(plate_design_path,sheet_name{k});
-    end
-    
 %%  INITILIZING VARIABLE NAMES    
     
     tablename_p2id  = info{1,2}{6};
@@ -341,12 +345,15 @@
 %   Position to Strain_ID
     exec(conn, sprintf('drop table %s',tablename_p2id)); 
     exec(conn, sprintf(['create table %s ',...
-        '(pos bigint not null primary key, strain_id int not null)'], tablename_p2id));
+        '(pos bigint not null primary key, strain_id int)'], tablename_p2id));
     for i = 1:size(tbl_p2s,1)
         if ~isempty(tbl_p2s{i})
             for ii = 1:size(tbl_p2s,2)
                 if ~isempty(tbl_p2s{i,ii})
-                    datainsert(conn,tablename_p2id,colnames_p2id,tbl_p2s{i,ii});
+%                     datainsert(conn,tablename_p2id,colnames_p2id,tbl_p2s{i,ii});
+                    sqlwrite(conn,tablename_p2id,array2table(tbl_p2s{i,ii},...
+                        'VariableName',colnames_p2id),...
+                        'Schema',info{1,2}{4});
                 end
             end
         end
@@ -356,12 +363,15 @@
     exec(conn, sprintf('drop table %s',tablename_p2c)); 
     exec(conn, sprintf(['create table %s (pos bigint not null primary key, ',...
             'density int not null, plate int not null, '...
-            'row int not null, col int not null)'],tablename_p2c));
+            '`row` int not null, `col` int not null)'],tablename_p2c));
     for i = 1:size(tbl_p2c,1)
         if ~isempty(tbl_p2c{i})
             for ii = 1:size(tbl_p2c,2)
                 if ~isempty(tbl_p2c{i,ii})
-                    datainsert(conn,tablename_p2c,colnames_p2c,tbl_p2c{i,ii});
+%                     datainsert(conn,tablename_p2c,colnames_p2c,tbl_p2c{i,ii});
+                    sqlwrite(conn,tablename_p2c,array2table(tbl_p2c{i,ii},...
+                    'VariableName',colnames_p2c),...
+                        'Schema',info{1,2}{4});
                 end
             end
         end
@@ -384,7 +394,6 @@
     
 %%  POS2ORF_NAME
 
-    exec(conn, sprintf('drop table %s',tablename_p2o));
 %  STRAIN_ID 2 ORF_NAME
     s2o_path = input('Path to strain_id to orf_name file (.xlsx): ','s');
     if exist(s2o_path, 'file') == 0
@@ -397,7 +406,7 @@
     tbl_s2o = readtable(s2o_path);
     exec(conn, sprintf('drop table %s',tablename_s2o)); 
     exec(conn, sprintf(['create table %s ',...
-        '(strain_id int not null primary key, orf_name varchar(20) null)'],tablename_s2o));
+        '(strain_id int not null primary key, orf_name varchar(255) null)'],tablename_s2o));
 
     datainsert(conn,tablename_s2o,colnames_s2o,tbl_s2o);
 
