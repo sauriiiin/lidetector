@@ -20,19 +20,20 @@
     loadtoolkit;
 %   use info.txt in the directory as a example
 %   place your file in the MATLAB directory
-    fileID = fopen(sprintf('%s/info.txt',toolkit_path),'r');
+    expt = input('Experiment Name: ', 's');
+    fileID = fopen(sprintf('%s/%s_info.txt',toolkit_path,expt),'r');
     info = textscan(fileID, '%s%s');
 
 %%  INITIALIZATION
     
 %   MySQL Connection
-    sql_info = {info{1,2}{2:4}}; % {usr, pwd, db}
+    sql_info = {info{1,2}{3:5}}; % {usr, pwd, db}
     conn = connSQL(sql_info);
     
     expt_set = input('Name of Experiment Arm: ','s');
     density = input('Colony-density of plates: ');
     
-    cont.name = info{1,2}{10};
+    cont.name = info{1,2}{11};
     
 %%   
     if density == 6144
@@ -55,14 +56,14 @@
     tablename_pval      = sprintf('%s_%d_PVALUE',expt_set,density);
     tablename_res       = sprintf('%s_%d_RES',expt_set,density);
     
-    tablename_p2s  = info{1,2}{6};
-    tablename_p2o  = info{1,2}{7};
-    tablename_s2o  = info{1,2}{8};
-    tablename_bpos = info{1,2}{9};
+    tablename_p2s  = info{1,2}{7};
+    tablename_p2o  = info{1,2}{8};
+    tablename_s2o  = info{1,2}{9};
+    tablename_bpos = info{1,2}{10};
     
-    tablename_p2p   = info{1,2}{11};
+    tablename_p2p   = info{1,2}{12};
     
-    p2c_info = {info{1,2}{5},'plate','row','col'};
+    p2c_info = {info{1,2}{6},'plate','row','col'};
     p2c = fetch(conn, sprintf(['select * from %s a ',...
         'where density = %d ',...
         'order by a.%s, a.%s, a.%s'],...
@@ -97,6 +98,14 @@
         exec(conn, sprintf(['update %s ',...
             'set average = NULL ',...
             'where average <= 10'],tablename_lac));
+        
+        if input('Do you need to correct for pinning artifacts? [Y/N]: ', 's') == 'Y'
+            pin_artifact = input('Threshold for pinning artifact [spImager:300, manual:10]: ');
+            exec(conn, sprintf(['update %s ',...
+                'set image1 = NULL, image2 = NULL, ',...
+                'image3 = NULL, average = NULL ',...
+                'where average <= %d'],tablename_lac,pin_artifact));
+        end
         
         if input('Do you have a smudgebox table? [Y/N] ', 's') == 'Y'
             tablename_sbox  = sprintf('%s_smudgebox', expt_set);
@@ -142,9 +151,14 @@
                 'average double default NULL, ',...
                 'fitness double default NULL, ',...
                 'primary key (pos, hours))'],tablename_norm));
+    colnames_norm = {'pos','hours','bg','average','fitness'};
+    
     for i=1:length(hours)
-        datainsert(conn, tablename_norm,...
-            {'pos','hours','bg','average','fitness'},fit_data{i});
+%         datainsert(conn, tablename_norm,...
+%             {'pos','hours','bg','average','fitness'},fit_data{i});
+        sqlwrite(conn,tablename_norm,array2table(fit_data{i},...
+                    'VariableName',colnames_norm),...
+                        'Schema',sql_info{3});
     end
 
     exec(conn, sprintf('drop table %s',tablename_fit)); 
@@ -171,15 +185,13 @@
             'hours double not null, N int not null, cs_mean double null, ',...
             'cs_median double null, cs_std double null, ',...
             'primary key (strain_id, hours))'],tablename_fits));
-
         colnames_fits = {'strain_id','orf_name','hours','N','cs_mean','cs_median','cs_std'};
 
         stat_data = fitstats_sid(tablename_fit,sql_info);
 
-        tic
-        datainsert(conn,tablename_fits,colnames_fits,stat_data)
-    %     sqlwrite(conn,tablename_fits,struct2table(stat_data));
-        toc  
+%         datainsert(conn,tablename_fits,colnames_fits,stat_data)
+        sqlwrite(conn,tablename_fits,struct2table(stat_data),...
+                        'Schema',sql_info{3});
     
 %%  FITNESS STATS to EMPIRICAL P VALUES
 
@@ -260,7 +272,7 @@
             pdata{iii}.es(cellfun(@isnan,pdata{iii}.es))        = {[]};
 
             sqlwrite(conn,tablename_pval,struct2table(pdata{iii}),...
-                'Schema',info{1,2}{4});
+                'Schema',sql_info{3});
         end
     end
         

@@ -19,7 +19,8 @@
     loadtoolkit;
 %   use info.txt in the directory as a example
 %   place your file in the MATLAB directory
-    fileID = fopen(sprintf('%s/info.txt',toolkit_path),'r');
+    expt = input('Experiment Name: ', 's');
+    fileID = fopen(sprintf('%s/%s_info.txt',toolkit_path,expt),'r');
     info = textscan(fileID, '%s%s');
     
 %%  INITIALIZATION
@@ -171,7 +172,7 @@
     cs_mean = [];
     tmp = cs';
 
-    if info{1,2}{1} == '3'
+    if info{1,2}{2} == '3'
         for ii = 1:3:length(files)
             cs_mean = [cs_mean, mean(tmp(:,ii:ii+2),2)];
         end
@@ -188,7 +189,7 @@
     tmp = [];
     i = 1;
     
-    if info{1,2}{1} == '3'
+    if info{1,2}{2} == '3'
         for ii = 1:3:size(cs,1)
             tmp = [cs(ii,:); cs(ii+1,:); cs(ii+2,:);...
                 cs_mean(i,:)];
@@ -206,12 +207,12 @@
 
 %%  UPLOAD RAW COLONY SIZE DATA TO SQL
 
-    sql_info = {info{1,2}{2:4}}; % {usr, pwd, db}
+    sql_info = {info{1,2}{3:5}}; % {usr, pwd, db}
     conn = connSQL(sql_info);
     
     tablename_raw  = sprintf('%s_%d_RAW',expt_set,density);
         
-    p2c_info = {info{1,2}{5},'plate','row','col'};
+    p2c_info = {info{1,2}{6},'plate','row','col'};
     p2c = fetch(conn, sprintf(['select * from %s a ',...
         'where density = %d ',...
         'order by a.%s, a.%s, a.%s'],...
@@ -234,7 +235,10 @@
 
     data = [tmpdata,master];
     tic
-    datainsert(conn,tablename_raw,colnames_raw,data);
+%     datainsert(conn,tablename_raw,colnames_raw,data);
+    sqlwrite(conn,tablename_raw,array2table(data,...
+                    'VariableName',colnames_raw),...
+                        'Schema',sql_info{3});
     toc
     
 %%  SPATIAL CLEANUP
@@ -242,7 +246,7 @@
     disp('Cleaning raw data to remove borders and light artifact.')
     
     tablename_clean  = sprintf('%s_%d_CLEAN',expt_set,density);
-    tablename_bpos  = info{1,2}{9};
+    tablename_bpos   = info{1,2}{10};
 
     exec(conn, sprintf('drop table %s',tablename_clean));
     exec(conn, sprintf(['create table %s (primary key (pos, hours)) ',...
@@ -258,6 +262,14 @@
         'set image1 = NULL, image2 = NULL, ',...
         'image3 = NULL, average = NULL ',...
         'where average <= 10'],tablename_clean));
+    
+    if input('Do you need to correct for pinning artifacts? [Y/N]: ', 's') == 'Y'
+        pin_artifact = input('Threshold for pinning artifact [spImager:300, manual:10]: ');
+        exec(conn, sprintf(['update %s ',...
+            'set image1 = NULL, image2 = NULL, ',...
+            'image3 = NULL, average = NULL ',...
+            'where average <= %d'],tablename_clean,pin_artifact));
+    end
 
 %%  SMUDGE_BOX
 

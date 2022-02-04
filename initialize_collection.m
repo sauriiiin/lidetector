@@ -9,7 +9,7 @@
 %   dr.saurin.parikh@gmail.com
 %%
 
-function data = initialize_collection(sql_info, iden)
+function [data, tbl_s2o] = initialize_collection(sql_info, iden)
     
     conn = connSQL(sql_info);
     % collections to be used
@@ -24,15 +24,17 @@ function data = initialize_collection(sql_info, iden)
        collection = [collection; temp_collection];
     end
     % the above code runs similar to the below mySQL query to gather collection
-% platemaps
-%     collection = fetch(conn, ['select * from BARFLEX_SPACE_AGAR_180313 ',...
-%         'union ',...
-%         'select * from PROTOGENE_COLLECTION ',...
-%         'union ',...
-%         'select * from TRANS_CONTROL_MAP']);
+    % platemaps
+    %     collection = fetch(conn, ['select * from BARFLEX_SPACE_AGAR_180313 ',...
+    %         'union ',...
+    %         'select * from PROTOGENE_COLLECTION ',...
+    %         'union ',...
+    %         'select * from TRANS_CONTROL_MAP']);
 
     % dummy plate to join platemaps to avoid missing data from gaps in the
     % maps.
+    tbl_s2o = unique(collection(:,[1,5]), 'rows');
+    
     dummy_plate = array2table([1:iden; indices(iden)]', 'VariableNames',...
         {'pos',collection.Properties.VariableNames{3},collection.Properties.VariableNames{4}});
      
@@ -45,7 +47,6 @@ function data = initialize_collection(sql_info, iden)
     else
         dimensions = [8 12];
     end
-    
     
     col_plates = unique(collection.x384plate_1(~isnan(collection.x384plate_1)));
     n_col_plates = length(col_plates);

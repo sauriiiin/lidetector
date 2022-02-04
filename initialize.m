@@ -39,16 +39,16 @@
     cont_name        = input('Reference Strain Name: ','s');
     images_per_plate = input('How many images did you take per plate? ');
     
-    info = [{'image/plate';'usr';'pwd';'db';...
+    info = [{'expt_name';'image/plate';'usr';'pwd';'db';...
         'p2c_tblname';'p2s_tblname';'p2o_tblname';...
         's2o_tblname';'bpos_tblname';'cont_name';...
         'p2p_tblname';'mysql'},...
-        {images_per_plate;username;password;database;...
+        {expt;images_per_plate;username;password;database;...
         p2c_tblname;p2s_tblname;p2o_tblname;...
         s2o_tblname;bpos_tblname;cont_name;...
         p2p_tblname;mysql}];
     
-    writetable(cell2table(info), sprintf('%s/info.txt', toolkit_path), 'Delimiter',' ',...
+    writetable(cell2table(info), sprintf('%s/%s_info.txt',toolkit_path,expt), 'Delimiter',' ',...
         'WriteVariableNames',false)
     
 %   Maximum number of Plates/Density at any stage of the experiment
@@ -85,24 +85,24 @@
     init = [{96;384;1536;6144},...
         {N_96; N_384; N_1536; N_6144}];
     
-    writetable(cell2table(init), sprintf('%s/init.txt', toolkit_path), 'Delimiter',' ',...
+    writetable(cell2table(init), sprintf('%s/%s_init.txt',toolkit_path,expt), 'Delimiter',' ',...
         'WriteVariableNames',false)
    
 %%  LOADING DATA
 %   Using info.txt and init.txt files just created
-    fileID = fopen(sprintf('%s/info.txt', toolkit_path),'r');
+    fileID = fopen(sprintf('%s/%s_info.txt',toolkit_path,expt),'r');
     info = textscan(fileID, '%s%s');
-    fileID = fopen(sprintf('%s/init.txt', toolkit_path),'r');
+    fileID = fopen(sprintf('%s/%s_init.txt',toolkit_path,expt),'r');
     init = textscan(fileID, '%f%f');
     
     iden = min(init{1,1}(init{1,2} ~= 0));
     
-    sql_info = {info{1,2}{2:4}}; % {usr, pwd, db}
+    sql_info = {info{1,2}{3:5}}; % {usr, pwd, db}
     conn = connSQL(sql_info);
     
     sqlcollection = input('Are you using collection platemap/s stored in the mySQL database? [Y/N] ','s');
     if sqlcollection == 'Y'
-        data = initialize_collection(sql_info, iden);
+        [data, tbl_s2o] = initialize_collection(sql_info, iden);
     else
         fprintf('The present working directory is: %s\n',pwd)
         plate_design_path = input('Path to lowest-density plate-design file (.xlsx): ','s');
@@ -122,15 +122,15 @@
     end
 %%  INITILIZING VARIABLE NAMES    
     
-    tablename_p2id  = info{1,2}{6};
-    tablename_p2c   = info{1,2}{5};
-    tablename_s2o   = info{1,2}{8};
-    tablename_p2o   = info{1,2}{7};
-    tablename_bpos  = info{1,2}{9};
-    tablename_p2p   = info{1,2}{11};
+    tablename_p2id  = info{1,2}{7};
+    tablename_p2c   = info{1,2}{6};
+    tablename_s2o   = info{1,2}{9};
+    tablename_p2o   = info{1,2}{8};
+    tablename_bpos  = info{1,2}{10};
+    tablename_p2p   = info{1,2}{12};
     
     colnames_p2id   = {'pos','strain_id'};
-    colnames_p2c    = {'pos','density','plate','row','col'};
+    colnames_p2c    = {'pos','density','plate_no','plate_row','plate_col'};
     colnames_s2o    = {'strain_id','orf_name'};
     colnames_p2p    = {'density','pos','rep_pos'};
     
@@ -353,7 +353,7 @@
 %                     datainsert(conn,tablename_p2id,colnames_p2id,tbl_p2s{i,ii});
                     sqlwrite(conn,tablename_p2id,array2table(tbl_p2s{i,ii},...
                         'VariableName',colnames_p2id),...
-                        'Schema',info{1,2}{4});
+                        'Schema',sql_info{3});
                 end
             end
         end
@@ -362,8 +362,8 @@
 %   Position to Coordinate
     exec(conn, sprintf('drop table %s',tablename_p2c)); 
     exec(conn, sprintf(['create table %s (pos bigint not null primary key, ',...
-            'density int not null, plate int not null, '...
-            '`row` int not null, `col` int not null)'],tablename_p2c));
+            'density int not null, plate_no int not null, '...
+            'plate_row int not null, plate_col int not null)'],tablename_p2c));
     for i = 1:size(tbl_p2c,1)
         if ~isempty(tbl_p2c{i})
             for ii = 1:size(tbl_p2c,2)
@@ -371,7 +371,7 @@
 %                     datainsert(conn,tablename_p2c,colnames_p2c,tbl_p2c{i,ii});
                     sqlwrite(conn,tablename_p2c,array2table(tbl_p2c{i,ii},...
                     'VariableName',colnames_p2c),...
-                        'Schema',info{1,2}{4});
+                        'Schema',sql_info{3});
                 end
             end
         end
@@ -385,7 +385,10 @@
         if ~isempty(tbl_p2p{i})
             for ii = 1:size(tbl_p2p,2)
                 if ~isempty(tbl_p2p{i,ii})
-                    datainsert(conn,tablename_p2p,colnames_p2p,tbl_p2p{i,ii});
+%                     datainsert(conn,tablename_p2p,colnames_p2p,tbl_p2p{i,ii});
+                    sqlwrite(conn,tablename_p2p,array2table(tbl_p2p{i,ii},...
+                    'VariableName',colnames_p2p),...
+                        'Schema',sql_info{3});
                 end
             end
         end
@@ -395,20 +398,23 @@
 %%  POS2ORF_NAME
 
 %  STRAIN_ID 2 ORF_NAME
-    s2o_path = input('Path to strain_id to orf_name file (.xlsx): ','s');
-    if exist(s2o_path, 'file') == 0
-        s2o_path = input('Please re-enter the path: ','s');
+
+    if sqlcollection == 'N' 
+        s2o_path = input('Path to strain_id to orf_name file (.xlsx): ','s');
         if exist(s2o_path, 'file') == 0
             s2o_path = input('Please re-enter the path: ','s');
+            if exist(s2o_path, 'file') == 0
+                s2o_path = input('Please re-enter the path: ','s');
+            end
         end
+        tbl_s2o = readtable(s2o_path);
     end
 
-    tbl_s2o = readtable(s2o_path);
     exec(conn, sprintf('drop table %s',tablename_s2o)); 
     exec(conn, sprintf(['create table %s ',...
         '(strain_id int not null primary key, orf_name varchar(255) null)'],tablename_s2o));
-
-    datainsert(conn,tablename_s2o,colnames_s2o,tbl_s2o);
+%     datainsert(conn,tablename_s2o,colnames_s2o,tbl_s2o);
+    sqlwrite(conn,tablename_s2o,tbl_s2o,'Schema',sql_info{3});
 
     exec(conn, sprintf('drop table %s',tablename_p2o)); 
     exec(conn, sprintf(['create table %s ',...
