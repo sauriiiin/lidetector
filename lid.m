@@ -79,7 +79,8 @@
     lac = input('Do you want to use local artifact correction? [Y/N] ', 's');
     if  lac == 'Y'
         lac_data = LocalCorrection(p2c_info,density,cont.name,...
-            tablename_s2o,tablename_p2s,tablename_raw,sql_info);
+            tablename_s2o,tablename_p2s,tablename_raw,sql_info,...
+            toolkit_path,expt);
         
         exec(conn, sprintf('drop table %s',tablename_lac));
         exec(conn, sprintf(['create table %s ( ',...
