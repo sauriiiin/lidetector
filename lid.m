@@ -159,7 +159,7 @@
 %             {'pos','hours','bg','average','fitness'},fit_data{i});
         sqlwrite(conn,tablename_norm,array2table(fit_data{i},...
                     'VariableName',colnames_norm),...
-                        'Schema',sql_info{3});
+                        'Catalog',sql_info{3});
     end
 
     exec(conn, sprintf('drop table %s',tablename_fit)); 
@@ -192,7 +192,7 @@
 
 %         datainsert(conn,tablename_fits,colnames_fits,stat_data)
         sqlwrite(conn,tablename_fits,struct2table(stat_data),...
-                        'Schema',sql_info{3});
+                        'Catalog',sql_info{3});
     
 %%  FITNESS STATS to EMPIRICAL P VALUES
 
@@ -273,7 +273,7 @@
             pdata{iii}.es(cellfun(@isnan,pdata{iii}.es))        = {[]};
 
             sqlwrite(conn,tablename_pval,struct2table(pdata{iii}),...
-                'Schema',sql_info{3});
+                'Catalog',sql_info{3});
         end
     end
         

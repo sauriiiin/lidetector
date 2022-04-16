@@ -353,7 +353,7 @@
 %                     datainsert(conn,tablename_p2id,colnames_p2id,tbl_p2s{i,ii});
                     sqlwrite(conn,tablename_p2id,array2table(tbl_p2s{i,ii},...
                         'VariableName',colnames_p2id),...
-                        'Schema',sql_info{3});
+                        'Catalog',sql_info{3});
                 end
             end
         end
@@ -371,7 +371,7 @@
 %                     datainsert(conn,tablename_p2c,colnames_p2c,tbl_p2c{i,ii});
                     sqlwrite(conn,tablename_p2c,array2table(tbl_p2c{i,ii},...
                     'VariableName',colnames_p2c),...
-                        'Schema',sql_info{3});
+                        'Catalog',sql_info{3});
                 end
             end
         end
@@ -388,7 +388,7 @@
 %                     datainsert(conn,tablename_p2p,colnames_p2p,tbl_p2p{i,ii});
                     sqlwrite(conn,tablename_p2p,array2table(tbl_p2p{i,ii},...
                     'VariableName',colnames_p2p),...
-                        'Schema',sql_info{3});
+                        'Catalog',sql_info{3});
                 end
             end
         end
@@ -414,7 +414,7 @@
     exec(conn, sprintf(['create table %s ',...
         '(strain_id int not null primary key, orf_name varchar(255) null)'],tablename_s2o));
 %     datainsert(conn,tablename_s2o,colnames_s2o,tbl_s2o);
-    sqlwrite(conn,tablename_s2o,tbl_s2o,'Schema',sql_info{3});
+    sqlwrite(conn,tablename_s2o,tbl_s2o,'Catalog',sql_info{3});
 
     exec(conn, sprintf('drop table %s',tablename_p2o)); 
     exec(conn, sprintf(['create table %s ',...

@@ -238,7 +238,7 @@
 %     datainsert(conn,tablename_raw,colnames_raw,data);
     sqlwrite(conn,tablename_raw,array2table(data,...
                     'VariableName',colnames_raw),...
-                        'Schema',sql_info{3});
+                        'Catalog',sql_info{3});
     toc
     
 %%  SPATIAL CLEANUP
